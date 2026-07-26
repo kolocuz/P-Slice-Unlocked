@@ -6,11 +6,6 @@ import haxe.Constraints;
 
 import substates.GameOverSubstate;
 
-//
-// Functions that use a high amount of Reflections, which are somewhat CPU intensive
-// These functions are held together by duct tape
-//
-
 class ReflectionFunctions
 {
 	static final instanceStr:Dynamic = "##PSYCHLUA_STRINGTOOBJ";
@@ -83,7 +78,7 @@ class ReflectionFunctions
 			{
 				switch(Type.typeof(groupOrArray))
 				{
-					case TClass(Array): //Is Array
+					case TClass(Array):
 						var leArray:Dynamic = realObject[index];
 						if(leArray != null) {
 							var result:Dynamic = null;
@@ -95,7 +90,7 @@ class ReflectionFunctions
 						}
 						FunkinLua.luaTrace('getPropertyFromGroup: Object #$index from group: $group doesn\'t exist!', false, false, FlxColor.RED);
 
-					default: //Is Group
+					default:
 						var result:Dynamic = LuaUtils.getGroupStuff(realObject.members[index], variable, allowMaps);
 						return result;
 				}
@@ -115,7 +110,7 @@ class ReflectionFunctions
 			{
 				switch(Type.typeof(realObject))
 				{
-					case TClass(Array): //Is Array
+					case TClass(Array):
 						var leArray:Dynamic = realObject[index];
 						if(leArray != null)
 						{
@@ -127,7 +122,7 @@ class ReflectionFunctions
 							LuaUtils.setGroupStuff(leArray, variable, allowInstances ? parseInstances(value) : value, allowMaps);
 						}
 
-					default: //Is Group
+					default:
 						LuaUtils.setGroupStuff(realObject.members[index], variable, allowInstances ? parseInstances(value) : value, allowMaps);
 				}
 			}
@@ -153,10 +148,10 @@ class ReflectionFunctions
 			{
 				switch(Type.typeof(groupOrArray))
 				{
-					case TClass(Array): //Is Array
+					case TClass(Array):
 						groupOrArray.push(obj);
 
-					default: //Is Group
+					default:
 						groupOrArray.add(obj);
 				}
 			}
@@ -194,7 +189,7 @@ class ReflectionFunctions
 
 			switch(Type.typeof(groupOrArray))
 			{
-				case TClass(Array): //Is Array
+				case TClass(Array):
 					if(obj != null)
 					{
 						groupOrArray.remove(obj);
@@ -202,7 +197,7 @@ class ReflectionFunctions
 					}
 					else groupOrArray.remove(groupOrArray[index]);
 
-				default: //Is Group
+				default:
 					if(obj == null) obj = groupOrArray.members[index];
 					groupOrArray.remove(obj, true);
 					if(destroy) obj.destroy();
@@ -301,16 +296,13 @@ class ReflectionFunctions
 			if(index > -1)
 			{
 				argStr = argStr.substring(index+2);
-				//trace('Op1: $argStr');
 				var lastIndex:Int = argStr.lastIndexOf('::');
 
 				var split:Array<String> = (lastIndex > -1) ? argStr.substring(0, lastIndex).split('.') : argStr.split('.');
 				arg = (lastIndex > -1) ? Type.resolveClass(argStr.substring(lastIndex+2)) : PlayState.instance;
 				for (j in 0...split.length)
 				{
-					//trace('Op2: ${Type.getClass(args[i])}, ${split[j]}');
 					arg = LuaUtils.getVarInArray(arg, split[j].trim());
-					//trace('Op3: ${args[i] != null ? Type.getClass(args[i]) : null}');
 				}
 			}
 		}
@@ -318,20 +310,18 @@ class ReflectionFunctions
 	}
 
 	static function resolveClass(name:String):Class<Dynamic>
-		{
-			//? Place here custom mappings for Classes (psych 0.6.3)
-			return switch (name){
-				case "PlayState": return Type.resolveClass("states.PlayState");
-				case "Conductor": return Type.resolveClass("backend.Conductor");
-				default:  Type.resolveClass(name);
-			}
+	{
+		return switch (name){
+			case "PlayState": Type.resolveClass("states.PlayState");
+			case "Conductor": Type.resolveClass("backend.Conductor");
+			default: Type.resolveClass(name);
 		}
+	}
 	static function callMethodFromObject(classObj:Dynamic, funcStr:String, args:Array<Dynamic>)
 	{
 		var split:Array<String> = funcStr.split('.');
 		var funcToRun:Function = null;
 		var obj:Dynamic = classObj;
-		//trace('start: ' + obj);
 		if(obj == null)
 		{
 			return null;
@@ -340,11 +330,9 @@ class ReflectionFunctions
 		for (i in 0...split.length)
 		{
 			obj = LuaUtils.getVarInArray(obj, split[i].trim());
-			//trace(obj, split[i]);
 		}
 
 		funcToRun = cast obj;
-		//trace('end: $obj');
 		return funcToRun != null ? Reflect.callMethod(obj, funcToRun, args) : null;
 	}
 }
