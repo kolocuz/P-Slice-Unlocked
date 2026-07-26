@@ -3,17 +3,12 @@ package psychlua;
 import flixel.util.FlxSave;
 import openfl.utils.Assets;
 
-//
-// Things to trivialize some dumb stuff like splitting strings on older Lua
-//
-
 class ExtraFunctions
 {
 	public static function implement(funk:FunkinLua)
 	{
 		var lua:State = funk.lua;
 		
-		// Keyboard & Gamepads
 		funk.set("keyboardJustPressed", function(name:String)
 		{
 			switch (name.toUpperCase())
@@ -170,13 +165,11 @@ class ExtraFunctions
 			return false;
 		});
 
-		// Save data management
 		Lua_helper.add_callback(lua, "initSaveData", function(name:String, ?folder:String = 'psychenginemods') {
 			var variables = MusicBeatState.getVariables();
 			if(!variables.exists('save_$name'))
 			{
 				var save:FlxSave = new FlxSave();
-				// folder goes unused for flixel 5 users. @BeastlyGhost
 				save.bind(name, CoolUtil.getSavePath() + '/' + folder);
 				variables.set('save_$name', save);
 				return;
@@ -225,24 +218,17 @@ class ExtraFunctions
 			FunkinLua.luaTrace('eraseSaveData: Save file not initialized: ' + name, false, false, FlxColor.RED);
 		});
 
-		// File management
 		Lua_helper.add_callback(lua, "checkFileExists", function(filename:String, ?absolute:Bool = false) {
-
 			if(absolute) return NativeFileSystem.exists(filename);
-
 			return NativeFileSystem.exists(Paths.getPath(filename, TEXT));
-
 		});
 		Lua_helper.add_callback(lua, "saveFile", function(path:String, content:String, ?absolute:Bool = false)
 		{
 			try {
-				#if MODS_ALLOWED
 				if(!absolute)
 					File.saveContent(Paths.mods(path), content);
 				else
-				#end
 					File.saveContent(path, content);
-
 				return true;
 			} catch (e:Dynamic) {
 				FunkinLua.luaTrace("saveFile: Error trying to save " + path + ": " + e, false, false, FlxColor.RED);
@@ -267,21 +253,19 @@ class ExtraFunctions
 		Lua_helper.add_callback(lua, "getTextFromFile", function(path:String, ?ignoreModFolders:Bool = false) {
 			return Paths.getTextFromFile(path, ignoreModFolders);
 		});
-		Lua_helper.add_callback(lua, "directoryFileList", function(folder:String) {
+		Lua_helper.add_callback(lua, "directoryFileList", function(folder:String, ?absolute:Bool = false) {
 			var list:Array<String> = [];
-			#if sys
-			if(NativeFileSystem.exists(folder)) {
-				for (folder in NativeFileSystem.readDirectory(folder)) {
-					if (!list.contains(folder)) {
-						list.push(folder);
+			var path:String = absolute ? folder : Paths.getPath(folder, TEXT);
+			if(NativeFileSystem.exists(path)) {
+				for (file in NativeFileSystem.readDirectory(path)) {
+					if (!list.contains(file)) {
+						list.push(file);
 					}
 				}
 			}
-			#end
 			return list;
 		});
 
-		// String tools
 		Lua_helper.add_callback(lua, "stringStartsWith", function(str:String, start:String) {
 			return str.startsWith(start);
 		});
@@ -295,7 +279,6 @@ class ExtraFunctions
 			return str.trim();
 		});
 
-		// Randomization
 		Lua_helper.add_callback(lua, "getRandomInt", function(min:Int, max:Int = FlxMath.MAX_VALUE_INT, exclude:String = '') {
 			var excludeArray:Array<String> = exclude.split(',');
 			var toExclude:Array<Int> = [];
