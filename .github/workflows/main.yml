@@ -1,38 +1,18 @@
-name: Build the game
+name: Build Windows and Linux
 
 on:
-  push:
-    branches: [master-dev]
   workflow_dispatch:
+
 jobs:
-  
-  BuildMobileCache:
-    name: Build Caches
-    permissions: write-all
-    uses: ./.github/workflows/dependencies.yml
-    with:
-      os: macos-15
-      CACHE_NAME: P-Slice.1.0.mobile-cache
-      setupScript: sh ./setup/mobile.sh
   BuildDesktopCache:
-    name: Build Caches
+    name: Build Desktop Cache
     permissions: write-all
     uses: ./.github/workflows/dependencies.yml
     with:
       os: ubuntu-24.04
       setupScript: sh ./setup/unix.sh
       CACHE_NAME: P-Slice.1.0.desktop-cache
-  BuildMacos:
-    name: macos
-    needs: BuildMobileCache
-    permissions: write-all
-    uses: ./.github/workflows/mac-universal.yml
-    with:
-      exportPath: macos
-      cachePath: P-Slice.1.0.build-macos
-      cacheLibrariesPath: P-Slice.1.0.mobile-cache
-      artifactName: P-Slice.1.0.macos
-      artifactPath: export/release/macos/bin/*
+
   BuildDesktop:
     name: Build Desktop
     needs: BuildDesktopCache
@@ -44,7 +24,7 @@ jobs:
             os: windows-2022
             buildArgs: "windows -final"
             exportPath: windows
-            artifactName: P-Slice.1.0.windows
+            artifactName: PSlice-Windows
             cacheLibrariesPath: P-Slice.1.0.desktop-cache
             cachePath: P-Slice.1.0.build-windows
             artifactPath: export\release\windows\bin\*
@@ -52,11 +32,10 @@ jobs:
             os: ubuntu-22.04
             buildArgs: "linux -final"
             exportPath: linux
-            artifactName: P-Slice.1.0.linux
+            artifactName: PSlice-Linux
             cachePath: P-Slice.1.0.build-linux
             cacheLibrariesPath: P-Slice.1.0.desktop-cache
             artifactPath: export/release/linux/bin/*
-
     uses: ./.github/workflows/build.yml
     with:
       name: ${{ matrix.name }}
@@ -66,39 +45,4 @@ jobs:
       exportPath: ${{ matrix.exportPath }}
       artifactName: ${{ matrix.artifactName }}
       artifactPath: ${{ matrix.artifactPath }}
-      cachePath: ${{matrix.cachePath}}
-
-  BuildMobile:
-    permissions: write-all
-    needs: BuildMobileCache
-    name: Build mobile
-    strategy:
-      matrix:
-        include:
-          - name: Android
-            os: ubuntu-24.04
-            exportPath: android
-            buildArgs: "android"
-            cacheLibrariesPath: P-Slice.1.0.mobile-cache
-            artifactName: P-Slice.1.0.android
-            cachePath: P-Slice.1.0.build-android
-            artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
-          - name: iOS
-            os: macos-15
-            buildArgs: "ios -nosign -final"
-            exportPath: ios/PSliceEngine/haxe/build/Release-iphoneos-64/
-            cacheLibrariesPath: P-Slice.1.0.mobile-cache
-            artifactName: P-Slice.1.0.ios
-            artifactPath: "export/release/ios/build/Release-iphoneos/*.ipa"
-            cachePath: P-Slice.1.0.build-ios
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
-    with:
-      name: ${{ matrix.name }}
-      os: ${{ matrix.os }}
-      buildArgs: ${{ matrix.buildArgs }}
-      exportPath: ${{ matrix.exportPath }}
-      artifactName: ${{ matrix.artifactName }}
-      cacheLibrariesPath: ${{ matrix.cacheLibrariesPath }}
-      artifactPath: ${{ matrix.artifactPath }}
-      cachePath: ${{matrix.cachePath}}
+      cachePath: ${{ matrix.cachePath }}
