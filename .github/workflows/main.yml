@@ -1,4 +1,4 @@
-name: Build Windows and Linux
+name: Build Windows, Linux and Android
 
 on:
   workflow_dispatch:
@@ -12,6 +12,15 @@ jobs:
       os: ubuntu-24.04
       setupScript: sh ./setup/unix.sh
       CACHE_NAME: P-Slice.1.0.desktop-cache
+
+  BuildMobileCache:
+    name: Build Mobile Cache
+    permissions: write-all
+    uses: ./.github/workflows/dependencies.yml
+    with:
+      os: ubuntu-24.04
+      setupScript: sh ./setup/mobile.sh
+      CACHE_NAME: P-Slice.1.0.mobile-cache
 
   BuildDesktop:
     name: Build Desktop
@@ -46,3 +55,19 @@ jobs:
       artifactName: ${{ matrix.artifactName }}
       artifactPath: ${{ matrix.artifactPath }}
       cachePath: ${{ matrix.cachePath }}
+
+  BuildAndroid:
+    name: Build Android
+    needs: BuildMobileCache
+    permissions: write-all
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      name: Android
+      os: ubuntu-24.04
+      buildArgs: "android"
+      exportPath: android
+      cacheLibrariesPath: P-Slice.1.0.mobile-cache
+      cachePath: P-Slice.1.0.build-android
+      artifactName: PSlice-Android
+      artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
