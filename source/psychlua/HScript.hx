@@ -150,7 +150,6 @@ class HScript extends Iris
 		set('IntIterator', IntIterator);
 		set('StringBuf', StringBuf);
 		set('StringTools', StringTools);
-		set('haxe', haxe);
 		#if sys
 		set('Sys', Sys);
 		set('File', File);
@@ -185,7 +184,6 @@ class HScript extends Iris
 		set('ClientPrefs', ClientPrefs);
 		set('MainMenuState', MainMenuState);
 		set('StoryMenuState', StoryMenuState);
-		set('ClientPrefs', ClientPrefs);
 		#if ACHIEVEMENTS_ALLOWED
 		set('Achievements', Achievements);
 		#end
@@ -338,7 +336,7 @@ class HScript extends Iris
 				var str:String = '';
 				if(libPackage.length > 0)
 					str = libPackage + '.';
-				var cls = Type.resolveClass(str + libName);
+				var cls:Dynamic = Type.resolveClass(str + libName);
 				if(cls == null) cls = Type.resolveEnum(str + libName);
 				if(cls == null) {
 					var parts = libName.split('.');
