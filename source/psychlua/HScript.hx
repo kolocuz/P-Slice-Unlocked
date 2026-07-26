@@ -91,7 +91,7 @@ class HScript extends Iris
 			this.origin = filePath;
 			#if MODS_ALLOWED
 			var myFolder:Array<String> = filePath.split('/');
-			if(myFolder[0] + '/' == Paths.mods() && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1]))) //is inside mods folder
+			if(myFolder[0] + '/' == Paths.mods() && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1])))
 				this.modFolder = myFolder[1];
 			#end
 		}
@@ -140,12 +140,33 @@ class HScript extends Iris
 	override function preset() {
 		super.preset();
 
-		// Some very commonly used classes
 		set('Type', Type);
+		set('Reflect', Reflect);
+		set('Math', Math);
+		set('Date', Date);
+		set('Std', Std);
+		set('EReg', EReg);
+		set('Lambda', Lambda);
+		set('IntIterator', IntIterator);
+		set('StringBuf', StringBuf);
+		set('StringTools', StringTools);
+		set('haxe', haxe);
 		#if sys
+		set('Sys', Sys);
 		set('File', File);
 		set('FileSystem', FileSystem);
+		set('Process', sys.io.Process);
+		set('Http', haxe.Http);
+		set('Json', haxe.Json);
+		set('Serializer', haxe.Serializer);
+		set('Unserializer', haxe.Unserializer);
+		set('BaseCode', haxe.crypto.BaseCode);
+		set('Base64', haxe.crypto.Base64);
+		set('Md5', haxe.crypto.Md5);
+		set('Sha1', haxe.crypto.Sha1);
+		set('Sha256', haxe.crypto.Sha256);
 		#end
+
 		set('FlxG', flixel.FlxG);
 		set('FlxMath', flixel.math.FlxMath);
 		set('FlxSprite', flixel.FlxSprite);
@@ -176,12 +197,10 @@ class HScript extends Iris
 		set('FlxRuntimeShader', flixel.addons.display.FlxRuntimeShader);
 		#end
 		set('ShaderFilter', openfl.filters.ShaderFilter);
-		set('StringTools', StringTools);
 		#if flxanimate
 		set('FlxAnimate', FlxAnimate);
 		#end
 
-		// Functions & Variables
 		set('setVar', function(name:String, value:Dynamic) {
 			MusicBeatState.getVariables().set(name, value);
 			return value;
@@ -217,7 +236,6 @@ class HScript extends Iris
 			return LuaUtils.getModSetting(saveTag, modName);
 		});
 
-		// Keyboard & Gamepads
 		set('keyboardJustPressed', function(name:String) return Reflect.getProperty(FlxG.keys.justPressed, name));
 		set('keyboardPressed', function(name:String) return Reflect.getProperty(FlxG.keys.pressed, name));
 		set('keyboardReleased', function(name:String) return Reflect.getProperty(FlxG.keys.justReleased, name));
@@ -296,8 +314,6 @@ class HScript extends Iris
 			return false;
 		});
 
-		// For adding your own callbacks
-		// not very tested but should work
 		#if LUA_ALLOWED
 		set('createGlobalCallback', function(name:String, func:Dynamic)
 		{
@@ -308,7 +324,6 @@ class HScript extends Iris
 			FunkinLua.customFunctions.set(name, func);
 		});
 
-		// this one was tested
 		set('createCallback', function(name:String, func:Dynamic, ?funk:FunkinLua = null)
 		{
 			if(funk == null) funk = parentLua;
@@ -323,8 +338,14 @@ class HScript extends Iris
 				var str:String = '';
 				if(libPackage.length > 0)
 					str = libPackage + '.';
-
-				set(libName, Type.resolveClass(str + libName));
+				var cls = Type.resolveClass(str + libName);
+				if(cls == null) cls = Type.resolveEnum(str + libName);
+				if(cls == null) {
+					var parts = libName.split('.');
+					var resolved = Type.resolveClass(str + parts.join('.'));
+					if(resolved != null) cls = resolved;
+				}
+				set(libName, cls);
 			}
 			catch (e:IrisError) {
 				Iris.error(Printer.errorToString(e, false), this.interp.posInfos());
@@ -378,6 +399,26 @@ class HScript extends Iris
 			return PlayState.instance.luaTouchPadJustReleased(button);
 		});
 		#end
+
+		set('readFile', function(path:String) return File.getContent(path));
+		set('writeFile', function(path:String, content:String) File.saveContent(path, content));
+		set('deleteFile', function(path:String) { if(FileSystem.exists(path)) FileSystem.deleteFile(path); });
+		set('createDir', function(path:String) FileSystem.createDirectory(path));
+		set('listDir', function(path:String) return FileSystem.readDirectory(path));
+		set('fileExists', function(path:String) return FileSystem.exists(path));
+
+		#if sys
+		set('command', function(cmd:String, ?args:Array<String> = null) {
+			var p = new Process(cmd, args ?? []);
+			var out = p.stdout.readAll().toString();
+			p.close();
+			return out;
+		});
+		set('exit', function(code:Int = 0) Sys.exit(code));
+		set('getEnv', function(name:String) return Sys.getEnv(name));
+		set('putEnv', function(name:String, value:String) Sys.putEnv(name, value));
+		#end
+
 		set('this', this);
 		set('game', FlxG.state);
 		set('controls', Controls.instance);
@@ -388,7 +429,7 @@ class HScript extends Iris
 
 		set('Function_Stop', LuaUtils.Function_Stop);
 		set('Function_Continue', LuaUtils.Function_Continue);
-		set('Function_StopLua', LuaUtils.Function_StopLua); //doesnt do much cuz HScript has a lower priority than Lua
+		set('Function_StopLua', LuaUtils.Function_StopLua);
 		set('Function_StopHScript', LuaUtils.Function_StopHScript);
 		set('Function_StopAll', LuaUtils.Function_StopAll);
 
@@ -413,7 +454,7 @@ class HScript extends Iris
 				final retVal:IrisCall = funk.hscript.call(funcToRun, funcArgs);
 				if (retVal != null)
 				{
-					return (retVal.returnValue == null || LuaUtils.isOfTypes(retVal.returnValue, [Bool, Int, Float, String, Array])) ? retVal.returnValue : null;
+					return retVal.returnValue;
 				}
 				else if (funk.hscript.returnValue != null)
 				{
@@ -429,7 +470,7 @@ class HScript extends Iris
 				final retVal:IrisCall = funk.hscript.call(funcToRun, funcArgs);
 				if (retVal != null)
 				{
-					return (retVal.returnValue == null || LuaUtils.isOfTypes(retVal.returnValue, [Bool, Int, Float, String, Array])) ? retVal.returnValue : null;
+					return retVal.returnValue;
 				}
 			}
 			else
@@ -440,7 +481,7 @@ class HScript extends Iris
 			}
 			return null;
 		});
-		// This function is unnecessary because import already exists in HScript as a native feature
+		
 		funk.addLocalCallback("addHaxeLibrary", function(libName:String, ?libPackage:String = '') {
 			var str:String = '';
 			if (libPackage.length > 0)
@@ -483,7 +524,7 @@ class HScript extends Iris
 		}
 
 		try {
-			var func:Dynamic = interp.variables.get(funcToRun); // function signature
+			var func:Dynamic = interp.variables.get(funcToRun);
 			final ret = Reflect.callMethod(null, func, args ?? []);
 			return {funName: funcToRun, signature: func, returnValue: ret};
 		}
