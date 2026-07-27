@@ -202,7 +202,7 @@ class HScript extends Iris
 		set('FlxAnimate', FlxAnimate);
 		#end
 
-		// ===== ВСЕ КЛАССЫ ДВИЖКА =====
+			
 		var classList = [
 			'flixel.FlxState','flixel.FlxSubState','flixel.FlxObject','flixel.FlxBasic',
 			'flixel.util.FlxSave','flixel.util.FlxDestroyUtil','flixel.util.FlxStringUtil','flixel.util.FlxSort',
@@ -240,17 +240,17 @@ class HScript extends Iris
 			'mobile.input.MobileInputID','mobile.input.MobileInputManager',
 			'mobile.objects.TouchPad','mobile.objects.Hitbox','mobile.objects.TouchButton'
 		];
-
-		for (name in classList) {
-			try {
-				var cls = Type.resolveClass(name);
-				if (cls == null) cls = Type.resolveEnum(name);
-				if (cls != null) {
-					var shortName = name.substr(name.lastIndexOf('.') + 1);
-					set(shortName, cls);
-				}
-			} catch (e:Dynamic) {}
-		}
+		
+for (name in classList) {
+    try {
+        var cls:Dynamic = Type.resolveClass(name);
+        if (cls == null) cls = Type.resolveEnum(name);
+        if (cls != null) {
+            var shortName = name.substr(name.lastIndexOf('.') + 1);
+            set(shortName, cls);
+        }
+    } catch (e:Dynamic) {}
+}
 
 		set('setVar', function(name:String, value:Dynamic) {
 			MusicBeatState.getVariables().set(name, value);
