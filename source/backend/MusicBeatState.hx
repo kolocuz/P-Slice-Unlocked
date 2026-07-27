@@ -15,13 +15,6 @@ import backend.CoolUtil;
 import backend.CustomFadeTransition;
 import backend.BaseStage;
 import mikolka.funkin.custom.NativeFileSystem;
-#if LUA_ALLOWED
-import psychlua.FunkinLua;
-import psychlua.LuaUtils;
-#end
-#if HSCRIPT_ALLOWED
-import psychlua.HScript;
-#end
 #if TOUCH_CONTROLS_ALLOWED
 import mobile.objects.TouchPad;
 import mobile.objects.Hitbox;
@@ -49,13 +42,6 @@ class MusicBeatState extends FlxState
 		return Controls.instance;
 	}
 
-	#if LUA_ALLOWED
-	public static var globalLuaScripts:Array<FunkinLua> = [];
-	#end
-	#if HSCRIPT_ALLOWED
-	public static var globalHScripts:Array<HScript> = [];
-	#end
-
 	#if TOUCH_CONTROLS_ALLOWED
 	public var touchPad:TouchPad;
 	public var hitbox:Hitbox;
@@ -75,7 +61,6 @@ class MusicBeatState extends FlxState
 			remove(touchPad);
 			touchPad = FlxDestroyUtil.destroy(touchPad);
 		}
-
 		if(tpadCam != null)
 		{
 			FlxG.cameras.remove(tpadCam);
@@ -86,13 +71,10 @@ class MusicBeatState extends FlxState
 	public function addHitbox(defaultDrawTarget:Bool = false):Void
 	{
 		var extraMode = MobileData.extraActions.get(ClientPrefs.data.extraHints);
-
-		hitbox = new Hitbox(extraMode,MobileData.getButtonsColors());
-
+		hitbox = new Hitbox(extraMode, MobileData.getButtonsColors());
 		camControls = new FlxCamera();
 		camControls.bgColor.alpha = 0;
 		FlxG.cameras.add(camControls, defaultDrawTarget);
-
 		hitbox.cameras = [camControls];
 		hitbox.visible = false;
 		add(hitbox);
@@ -106,7 +88,6 @@ class MusicBeatState extends FlxState
 			hitbox = FlxDestroyUtil.destroy(hitbox);
 			hitbox = null;
 		}
-
 		if(camControls != null)
 		{
 			FlxG.cameras.remove(camControls);
@@ -132,81 +113,6 @@ class MusicBeatState extends FlxState
 	public static function getVariables()
 		return getState().variables;
 
-	#if LUA_ALLOWED
-	function loadGlobalScripts()
-	{
-		if (globalLuaScripts.length > 0) return;
-
-		for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'global_scripts/'))
-		{
-			#if linux
-			for (file in CoolUtil.sortAlphabetically(NativeFileSystem.readDirectory(folder)))
-			#else
-			for (file in NativeFileSystem.readDirectory(folder))
-			#end
-			{
-				if (file.toLowerCase().endsWith('.lua'))
-				{
-					try
-					{
-						var script = new FunkinLua(folder + file);
-						globalLuaScripts.push(script);
-						script.set('stateName', Type.getClassName(Type.getClass(this)));
-						trace('Global Lua loaded: $folder$file');
-					}
-					catch (e:Dynamic)
-					{
-						trace('Error loading global script $file: $e');
-					}
-				}
-				
-				#if HSCRIPT_ALLOWED
-				if (file.toLowerCase().endsWith('.hx'))
-				{
-					try
-					{
-						var script = new HScript(null, folder + file);
-						globalHScripts.push(script);
-						if (script.exists('onCreate'))
-							script.call('onCreate');
-						trace('Global HScript loaded: $folder$file');
-					}
-					catch (e:Dynamic)
-					{
-						trace('Error loading global HScript $file: $e');
-					}
-				}
-				#end
-			}
-		}
-	}
-
-	function callGlobalScripts(func:String, args:Array<Dynamic> = null):Dynamic
-	{
-		var result:Dynamic = LuaUtils.Function_Continue;
-		for (script in globalLuaScripts)
-		{
-			if (script.closed) continue;
-			var ret = script.call(func, args ?? []);
-			if (ret != null && ret != LuaUtils.Function_Continue)
-				result = ret;
-		}
-		#if HSCRIPT_ALLOWED
-		for (script in globalHScripts)
-		{
-			try {
-				if (script.exists(func)) {
-					var ret = script.call(func, args ?? []);
-					if (ret != null && ret.returnValue != LuaUtils.Function_Continue)
-						result = ret.returnValue;
-				}
-			} catch (e:Dynamic) {}
-		}
-		#end
-		return result;
-	}
-	#end
-
 	override function create() {
 		currentState = this;
 		var skip:Bool = FlxTransitionableState.skipNextTransOut;
@@ -214,16 +120,6 @@ class MusicBeatState extends FlxState
 
 		#if MODS_ALLOWED
 		Mods.updatedOnState = false;
-		#end
-
-		#if LUA_ALLOWED
-		loadGlobalScripts();
-		for (script in globalLuaScripts)
-		{
-			script.set('stateName', Type.getClassName(Type.getClass(this)));
-		}
-		callGlobalScripts('onStateChange', [Type.getClassName(Type.getClass(this))]);
-		callGlobalScripts('onCreate', []);
 		#end
 
 		if(!_psychCameraInitialized) initPsychCamera();
@@ -235,10 +131,6 @@ class MusicBeatState extends FlxState
 		}
 		FlxTransitionableState.skipNextTransOut = false;
 		timePassedOnState = 0;
-
-		#if LUA_ALLOWED
-		callGlobalScripts('onCreatePost', []);
-		#end
 	}
 
 	public function initPsychCamera():PsychCamera
@@ -261,33 +153,17 @@ class MusicBeatState extends FlxState
 
 		if (oldStep != curStep)
 		{
-			if(curStep > 0)
-				stepHit();
-
+			if(curStep > 0) stepHit();
 			if(PlayState.SONG != null)
 			{
-				if (oldStep < curStep)
-					updateSection();
-				else
-					rollbackSection();
+				if (oldStep < curStep) updateSection();
+				else rollbackSection();
 			}
 		}
 
 		if(FlxG.save.data != null) FlxG.save.data.fullscreen = FlxG.fullscreen;
-		
-		stagesFunc(function(stage:BaseStage) {
-			stage.update(elapsed);
-		});
-
-		#if LUA_ALLOWED
-		callGlobalScripts('onUpdate', [elapsed]);
-		#end
-
+		stagesFunc(function(stage:BaseStage) stage.update(elapsed));
 		super.update(elapsed);
-
-		#if LUA_ALLOWED
-		callGlobalScripts('onUpdatePost', [elapsed]);
-		#end
 	}
 
 	private function updateSection():Void
@@ -305,7 +181,6 @@ class MusicBeatState extends FlxState
 	private function rollbackSection():Void
 	{
 		if(curStep < 0) return;
-
 		var lastSection:Int = curSection;
 		curSection = 0;
 		stepsToDo = 0;
@@ -315,11 +190,9 @@ class MusicBeatState extends FlxState
 			{
 				stepsToDo += Math.round(getBeatsOnSection() * 4);
 				if(stepsToDo > curStep) break;
-				
 				curSection++;
 			}
 		}
-
 		if(curSection > lastSection) sectionHit();
 	}
 
@@ -332,7 +205,6 @@ class MusicBeatState extends FlxState
 	private function updateCurStep():Void
 	{
 		var lastChange = Conductor.getBPMFromSeconds(Conductor.songPosition);
-
 		var shit = ((Conductor.songPosition - ClientPrefs.data.noteOffset) - lastChange.songTime) / lastChange.stepCrochet;
 		curDecStep = lastChange.stepTime + shit;
 		curStep = lastChange.stepTime + Math.floor(shit);
@@ -340,12 +212,7 @@ class MusicBeatState extends FlxState
 
 	public static function switchState(nextState:FlxState = null) {
 		if(nextState == null) nextState = FlxG.state;
-		if(nextState == FlxG.state)
-		{
-			resetState();
-			return;
-		}
-
+		if(nextState == FlxG.state) { resetState(); return; }
 		if(FlxTransitionableState.skipNextTransIn) FlxG.switchState(nextState);
 		else startTransition(nextState);
 		FlxTransitionableState.skipNextTransIn = false;
@@ -359,9 +226,7 @@ class MusicBeatState extends FlxState
 
 	public static function startTransition(nextState:FlxState = null)
 	{
-		if(nextState == null)
-			nextState = FlxG.state;
-
+		if(nextState == null) nextState = FlxG.state;
 		FlxG.state.openSubState(new CustomFadeTransition(0.5, false));
 		if(nextState == FlxG.state)
 			CustomFadeTransition.finishCallback = function() FlxG.resetState();
@@ -383,13 +248,7 @@ class MusicBeatState extends FlxState
 			stage.curDecStep = curDecStep;
 			stage.stepHit();
 		});
-
-		#if LUA_ALLOWED
-		callGlobalScripts('onStepHit', []);
-		#end
-
-		if (curStep % 4 == 0)
-			beatHit();
+		if (curStep % 4 == 0) beatHit();
 	}
 
 	public var stages:Array<BaseStage> = [];
@@ -400,10 +259,6 @@ class MusicBeatState extends FlxState
 			stage.curDecBeat = curDecBeat;
 			stage.beatHit();
 		});
-
-		#if LUA_ALLOWED
-		callGlobalScripts('onBeatHit', []);
-		#end
 	}
 
 	public function sectionHit():Void
@@ -412,10 +267,6 @@ class MusicBeatState extends FlxState
 			stage.curSection = curSection;
 			stage.sectionHit();
 		});
-
-		#if LUA_ALLOWED
-		callGlobalScripts('onSectionHit', []);
-		#end
 	}
 
 	public function stagesFunc(func:BaseStage->Void)
@@ -431,12 +282,6 @@ class MusicBeatState extends FlxState
 		removeTouchPad();
 		removeHitbox();
 		#end
-
-		#if LUA_ALLOWED
-		callGlobalScripts('onStateDestroy', [Type.getClassName(Type.getClass(this))]);
-		callGlobalScripts('onDestroy', []);
-		#end
-		
 		super.destroy();
 	}
 
