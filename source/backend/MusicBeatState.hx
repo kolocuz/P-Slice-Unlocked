@@ -2,24 +2,7 @@ package backend;
 
 import openfl.display.BitmapData;
 import flixel.FlxState;
-import flixel.FlxG;
-import flixel.util.FlxDestroyUtil;
-import flixel.addons.transition.FlxTransitionableState;
 import backend.PsychCamera;
-import backend.Paths;
-import backend.Mods;
-import backend.Controls;
-import backend.Conductor;
-import backend.ClientPrefs;
-import backend.CoolUtil;
-import backend.CustomFadeTransition;
-import backend.BaseStage;
-import mikolka.funkin.custom.NativeFileSystem;
-#if TOUCH_CONTROLS_ALLOWED
-import mobile.objects.TouchPad;
-import mobile.objects.Hitbox;
-import mobile.backend.MobileData;
-#end
 
 @:bitmap("assets/embed/images/ui/cursor.png")
 private class FunkinCursor extends BitmapData {}
@@ -61,6 +44,7 @@ class MusicBeatState extends FlxState
 			remove(touchPad);
 			touchPad = FlxDestroyUtil.destroy(touchPad);
 		}
+
 		if(tpadCam != null)
 		{
 			FlxG.cameras.remove(tpadCam);
@@ -71,10 +55,13 @@ class MusicBeatState extends FlxState
 	public function addHitbox(defaultDrawTarget:Bool = false):Void
 	{
 		var extraMode = MobileData.extraActions.get(ClientPrefs.data.extraHints);
-		hitbox = new Hitbox(extraMode, MobileData.getButtonsColors());
+
+		hitbox = new Hitbox(extraMode,MobileData.getButtonsColors());
+
 		camControls = new FlxCamera();
 		camControls.bgColor.alpha = 0;
 		FlxG.cameras.add(camControls, defaultDrawTarget);
+
 		hitbox.cameras = [camControls];
 		hitbox.visible = false;
 		add(hitbox);
@@ -88,6 +75,7 @@ class MusicBeatState extends FlxState
 			hitbox = FlxDestroyUtil.destroy(hitbox);
 			hitbox = null;
 		}
+
 		if(camControls != null)
 		{
 			FlxG.cameras.remove(camControls);
@@ -105,8 +93,15 @@ class MusicBeatState extends FlxState
 			touchPad.cameras = [tpadCam];
 		}
 	}
-	#end
 
+	override function destroy()
+	{
+		removeTouchPad();
+		removeHitbox();
+		
+		super.destroy();
+	}
+	#end
 	var _psychCameraInitialized:Bool = false;
 
 	public var variables:Map<String, Dynamic> = new Map<String, Dynamic>();
@@ -116,11 +111,10 @@ class MusicBeatState extends FlxState
 	override function create() {
 		currentState = this;
 		var skip:Bool = FlxTransitionableState.skipNextTransOut;
+		// //? Should fix the funkin cursor for good
 		if(!(FlxG.mouse.cursor?.bitmapData is FunkinCursor)) FlxG.mouse.load(new FunkinCursor(0,0));
-
-		#if MODS_ALLOWED
-		Mods.updatedOnState = false;
-		#end
+		//nvm. too much lag
+		#if MODS_ALLOWED Mods.updatedOnState = false; #end
 
 		if(!_psychCameraInitialized) initPsychCamera();
 
@@ -139,12 +133,14 @@ class MusicBeatState extends FlxState
 		FlxG.cameras.reset(camera);
 		FlxG.cameras.setDefaultDrawTarget(camera, true);
 		_psychCameraInitialized = true;
+		//trace('initialized psych camera ' + Sys.cpuTime());
 		return camera;
 	}
 
 	public static var timePassedOnState:Float = 0;
 	override function update(elapsed:Float)
 	{
+		//everyStep();
 		var oldStep:Int = curStep;
 		timePassedOnState += elapsed;
 
@@ -153,16 +149,24 @@ class MusicBeatState extends FlxState
 
 		if (oldStep != curStep)
 		{
-			if(curStep > 0) stepHit();
+			if(curStep > 0)
+				stepHit();
+
 			if(PlayState.SONG != null)
 			{
-				if (oldStep < curStep) updateSection();
-				else rollbackSection();
+				if (oldStep < curStep)
+					updateSection();
+				else
+					rollbackSection();
 			}
 		}
 
 		if(FlxG.save.data != null) FlxG.save.data.fullscreen = FlxG.fullscreen;
-		stagesFunc(function(stage:BaseStage) stage.update(elapsed));
+		
+		stagesFunc(function(stage:BaseStage) {
+			stage.update(elapsed);
+		});
+
 		super.update(elapsed);
 	}
 
@@ -181,6 +185,7 @@ class MusicBeatState extends FlxState
 	private function rollbackSection():Void
 	{
 		if(curStep < 0) return;
+
 		var lastSection:Int = curSection;
 		curSection = 0;
 		stepsToDo = 0;
@@ -190,9 +195,11 @@ class MusicBeatState extends FlxState
 			{
 				stepsToDo += Math.round(getBeatsOnSection() * 4);
 				if(stepsToDo > curStep) break;
+				
 				curSection++;
 			}
 		}
+
 		if(curSection > lastSection) sectionHit();
 	}
 
@@ -205,6 +212,7 @@ class MusicBeatState extends FlxState
 	private function updateCurStep():Void
 	{
 		var lastChange = Conductor.getBPMFromSeconds(Conductor.songPosition);
+
 		var shit = ((Conductor.songPosition - ClientPrefs.data.noteOffset) - lastChange.songTime) / lastChange.stepCrochet;
 		curDecStep = lastChange.stepTime + shit;
 		curStep = lastChange.stepTime + Math.floor(shit);
@@ -212,7 +220,12 @@ class MusicBeatState extends FlxState
 
 	public static function switchState(nextState:FlxState = null) {
 		if(nextState == null) nextState = FlxG.state;
-		if(nextState == FlxG.state) { resetState(); return; }
+		if(nextState == FlxG.state)
+		{
+			resetState();
+			return;
+		}
+
 		if(FlxTransitionableState.skipNextTransIn) FlxG.switchState(nextState);
 		else startTransition(nextState);
 		FlxTransitionableState.skipNextTransIn = false;
@@ -224,9 +237,12 @@ class MusicBeatState extends FlxState
 		FlxTransitionableState.skipNextTransIn = false;
 	}
 
+	// Custom made Trans in
 	public static function startTransition(nextState:FlxState = null)
 	{
-		if(nextState == null) nextState = FlxG.state;
+		if(nextState == null)
+			nextState = FlxG.state;
+
 		FlxG.state.openSubState(new CustomFadeTransition(0.5, false));
 		if(nextState == FlxG.state)
 			CustomFadeTransition.finishCallback = function() FlxG.resetState();
@@ -248,12 +264,15 @@ class MusicBeatState extends FlxState
 			stage.curDecStep = curDecStep;
 			stage.stepHit();
 		});
-		if (curStep % 4 == 0) beatHit();
+
+		if (curStep % 4 == 0)
+			beatHit();
 	}
 
 	public var stages:Array<BaseStage> = [];
 	public function beatHit():Void
 	{
+		//trace('Beat: ' + curBeat);
 		stagesFunc(function(stage:BaseStage) {
 			stage.curBeat = curBeat;
 			stage.curDecBeat = curDecBeat;
@@ -263,6 +282,7 @@ class MusicBeatState extends FlxState
 
 	public function sectionHit():Void
 	{
+		//trace('Section: ' + curSection + ', Beat: ' + curBeat + ', Step: ' + curStep);
 		stagesFunc(function(stage:BaseStage) {
 			stage.curSection = curSection;
 			stage.sectionHit();
@@ -274,15 +294,6 @@ class MusicBeatState extends FlxState
 		for (stage in stages)
 			if(stage != null && stage.exists && stage.active)
 				func(stage);
-	}
-
-	override function destroy()
-	{
-		#if TOUCH_CONTROLS_ALLOWED
-		removeTouchPad();
-		removeHitbox();
-		#end
-		super.destroy();
 	}
 
 	function getBeatsOnSection()
