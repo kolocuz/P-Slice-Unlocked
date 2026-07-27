@@ -1,7 +1,6 @@
 package objects;
 
 import backend.animation.PsychAnimationController;
-
 import shaders.RGBPalette;
 import shaders.RGBPalette.RGBShaderReference;
 
@@ -14,6 +13,8 @@ class StrumNote extends FlxSprite
 	public var downScroll:Bool = false;
 	public var sustainReduce:Bool = true;
 	private var player:Int;
+	public var inSustain:Bool = false;
+	public var frameSustain:Bool = false;
 	
 	public var texture(default, set):String = null;
 	private function set_texture(value:String):String {
@@ -25,12 +26,12 @@ class StrumNote extends FlxSprite
 	}
 
 	public var useRGBShader:Bool = true;
+	
 	public function new(x:Float, y:Float, leData:Int, player:Int) {
 		animation = new PsychAnimationController(this);
 
 		rgbShader = new RGBShaderReference(this, Note.initializeGlobalRGBShader(leData));
 		rgbShader.enabled = false;
-		if(PlayState.SONG != null && PlayState.SONG.disableNoteRGB) useRGBShader = false;
 		
 		var arr:Array<FlxColor> = ClientPrefs.data.arrowRGB[leData];
 		if(PlayState.isPixelStage) arr = ClientPrefs.data.arrowRGBPixel[leData];
@@ -53,12 +54,12 @@ class StrumNote extends FlxSprite
 
 		var skin:String = null;
 		if(PlayState.SONG != null && PlayState.SONG.arrowSkin != null && PlayState.SONG.arrowSkin.length > 1) skin = PlayState.SONG.arrowSkin;
-		else skin = Note.defaultNoteSkin;
+		else skin = Note.DEFAULT_NOTE_SKIN;
 
 		var customSkin:String = skin + Note.getNoteSkinPostfix();
 		if(Paths.fileExists('images/$customSkin.png', IMAGE)) skin = customSkin;
 
-		texture = skin; //Load texture and anims
+		texture = skin;
 		scrollFactor.set();
 		playAnim('static');
 	}
@@ -111,7 +112,6 @@ class StrumNote extends FlxSprite
 			animation.addByPrefix('red', 'arrowRIGHT');
 
 			antialiasing = ClientPrefs.data.antialiasing;
-			var noteScale = ClientPrefs.data.extraHints == "ARROWS";
 			setGraphicSize(Std.int(width * 0.7));
 
 			switch (Math.abs(noteData) % 4)
@@ -144,23 +144,11 @@ class StrumNote extends FlxSprite
 
 	public function playerPosition()
 	{
-		// Arrow mode hitboxes require arrows to be in special place.
-		x += Note.swagWidth * noteData;
-		#if TOUCH_CONTROLS_ALLOWED
-		final isHitboxArrowMode = ClientPrefs.data.extraHints == "ARROWS" && ClientPrefs.data.middleScroll;
-		//Spacing between arrows
-		final ARROW_SPREAD = 90;
-		if(isHitboxArrowMode && player == 1) {
-			x += ARROW_SPREAD * (noteData-1);
-			x -= 45;
-		}
-		#end
-		
-		x += 50;
-		x += ((FlxG.width / 2) * player);
+		x += Note.swagWidth * (noteData - 2);
 	}
 
 	override function update(elapsed:Float) {
+		frameSustain = false;
 		if(resetAnim > 0) {
 			resetAnim -= elapsed;
 			if(resetAnim <= 0) {
@@ -168,6 +156,7 @@ class StrumNote extends FlxSprite
 				resetAnim = 0;
 			}
 		}
+		if (inSustain) frameSustain = true;
 		super.update(elapsed);
 	}
 
@@ -178,6 +167,6 @@ class StrumNote extends FlxSprite
 			centerOffsets();
 			centerOrigin();
 		}
-		if(useRGBShader) rgbShader.enabled = (animation.curAnim != null && animation.curAnim.name != 'static');
+		rgbShader.enabled = (animation.curAnim != null && animation.curAnim.name != 'static');
 	}
 }
