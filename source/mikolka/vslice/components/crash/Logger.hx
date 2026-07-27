@@ -39,9 +39,6 @@ class Logger{
     
     private static function log(v:Dynamic, ?infos:PosInfos):Void {
         var str = Log.formatOutput(v,infos);
-        #if FIREBASE_CRASH_HANDLER
-        Crashlytics.log(str);
-        #end
         if(enforceLogSettings){
             if(VsliceOptions.LOGGING == "None") return;
             if(VsliceOptions.LOGGING == "Console") Sys.println(str);
