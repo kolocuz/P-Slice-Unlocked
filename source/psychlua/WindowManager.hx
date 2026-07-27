@@ -1,6 +1,6 @@
 package psychlua;
 
-import backend.Paths
+import backend.Paths;
 import lime.app.Application;
 import lime.ui.Window;
 import lime.ui.WindowAttributes;
