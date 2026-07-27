@@ -49,7 +49,6 @@
 
         <define name="ATSC_SUPPORT" unless="web"/>
 
-        <!-- Firebase выпилен полностью -->
 
         <define name="TOUCH_HERE_TO_PLAY" if="TOUCH_CONTROLS_ALLOWED debug" />
 
@@ -246,7 +245,6 @@
 
         <!-- _________________________________ Custom _______________________________ -->
 
-        <!-- Firebase секция удалена полностью -->
 
         <section if="PROFILE_BUILD">
                 <assets path='art/desktop/icon16.png' rename='icon.png' if="linux" />
