@@ -202,55 +202,118 @@ class HScript extends Iris
 		set('FlxAnimate', FlxAnimate);
 		#end
 
-			
 		var classList = [
-			'flixel.FlxState','flixel.FlxSubState','flixel.FlxObject','flixel.FlxBasic',
-			'flixel.util.FlxSave','flixel.util.FlxDestroyUtil','flixel.util.FlxStringUtil','flixel.util.FlxSort',
-			'flixel.math.FlxPoint','flixel.math.FlxRect','flixel.math.FlxAngle','flixel.math.FlxVelocity','flixel.math.FlxRandom',
-			'flixel.sound.FlxSound','flixel.tweens.FlxTweenType',
+			'haxe.Exception','haxe.io.Path','haxe.PosInfos',
+			'openfl.Assets','openfl.Lib','openfl.display.FPS',
+			'openfl.display.Sprite','openfl.display.StageScaleMode',
+			'openfl.display.Window','openfl.display.NativeWindow',
+			'openfl.display.NativeWindowInitOptions',
+			'openfl.events.Event','openfl.events.InvokeEvent',
+			'openfl.utils._internal.Lib','openfl.desktop.NativeApplication',
+			'openfl.display.Bitmap','openfl.display.BitmapData',
+			'openfl.display.Shape','openfl.display.Graphics',
+			'openfl.display.MovieClip','openfl.display.DisplayObject',
+			'openfl.text.TextField','openfl.text.TextFormat',
+			'openfl.geom.Rectangle','openfl.geom.Point',
+			'openfl.geom.Matrix','openfl.geom.ColorTransform',
+			'openfl.events.MouseEvent','openfl.events.KeyboardEvent',
+			'openfl.media.Sound','openfl.media.SoundChannel',
+			'openfl.net.URLRequest','openfl.utils.Assets','openfl.utils.ByteArray',
+			'lime.app.Application','lime.graphics.Image',
+			'lime.ui.Window','lime.ui.WindowAttributes',
+			'lime.system.System','lime.media.AudioManager',
+			'flixel.FlxGame','flixel.FlxState','flixel.FlxSubState',
+			'flixel.FlxObject','flixel.FlxBasic',
+			'flixel.util.FlxSave','flixel.util.FlxDestroyUtil',
+			'flixel.util.FlxStringUtil','flixel.util.FlxSort',
+			'flixel.math.FlxPoint','flixel.math.FlxRect',
+			'flixel.math.FlxAngle','flixel.math.FlxVelocity',
+			'flixel.math.FlxRandom','flixel.sound.FlxSound',
+			'flixel.tweens.FlxTweenType',
 			'flixel.group.FlxSpriteGroup','flixel.group.FlxGroup',
 			'flixel.addons.transition.FlxTransitionableState',
 			'flixel.system.FlxAssets.FlxShader','flixel.ui.FlxBar',
-			'flixel.animation.FlxAnimationController','flixel.graphics.FlxGraphic',
-			'flixel.graphics.frames.FlxAtlasFrames','flixel.graphics.frames.FlxFrame',
+			'flixel.animation.FlxAnimationController',
+			'flixel.graphics.FlxGraphic',
+			'flixel.graphics.frames.FlxAtlasFrames',
+			'flixel.graphics.frames.FlxFrame',
 			'flixel.input.keyboard.FlxKey','flixel.input.keyboard.FlxKeyboard',
-			'flixel.input.gamepad.FlxGamepad','flixel.input.gamepad.FlxGamepadInputID','flixel.input.mouse.FlxMouse',
-			'openfl.Lib','openfl.display.Stage','openfl.display.Sprite',
-			'openfl.display.Bitmap','openfl.display.BitmapData','openfl.display.Shape',
-			'openfl.display.Graphics','openfl.display.MovieClip','openfl.display.DisplayObject',
-			'openfl.text.TextField','openfl.text.TextFormat',
-			'openfl.geom.Rectangle','openfl.geom.Point','openfl.geom.Matrix','openfl.geom.ColorTransform',
-			'openfl.events.Event','openfl.events.MouseEvent','openfl.events.KeyboardEvent',
-			'openfl.media.Sound','openfl.media.SoundChannel',
-			'openfl.net.URLRequest','openfl.utils.Assets','openfl.utils.ByteArray',
-			'lime.app.Application','lime.ui.Window','lime.system.System',
-			'lime.graphics.Image','lime.media.AudioManager',
-			'states.LoadingState','states.FreeplayState','states.CreditsState','states.OptionsState',
-			'backend.Paths','backend.Conductor','backend.ClientPrefs','backend.Controls',
-			'backend.CoolUtil','backend.Difficulty','backend.Highscore','backend.Song',
-			'backend.WeekData','backend.StageData','backend.Rating','backend.Mods',
-			'backend.MusicBeatState','backend.MusicBeatSubstate','backend.BaseStage',
-			'backend.CustomFadeTransition','backend.NoteTypesConfig','backend.Language','backend.Discord',
-			'objects.StrumNote','objects.NoteSplash','objects.HealthIcon','objects.Bar',
-			'objects.AttachedSprite','objects.BGSprite',
+			'flixel.input.gamepad.FlxGamepad',
+			'flixel.input.gamepad.FlxGamepadInputID',
+			'flixel.input.mouse.FlxMouse',
+			'states.InitState','states.LoadingState',
+			'states.FreeplayState','states.CreditsState','states.OptionsState',
+			'states.stages.objects.StageObject',
+			'states.stages.objects.StageSprite',
+			'states.stages.objects.BackgroundSprite',
+			'states.stages.objects.CharacterSprite',
+			'backend.Paths','backend.CacheSystem','backend.Controls',
+			'backend.CoolUtil','backend.Conductor','backend.ClientPrefs',
+			'backend.Difficulty','backend.Highscore','backend.Song',
+			'backend.WeekData','backend.StageData','backend.Rating',
+			'backend.Mods','backend.MusicBeatState','backend.MusicBeatSubstate',
+			'backend.BaseStage','backend.CustomFadeTransition',
+			'backend.NoteTypesConfig','backend.Language','backend.Discord',
+			'backend.ui.PsychUIButton','backend.ui.PsychUICheckBox',
+			'backend.ui.PsychUIDropDown','backend.ui.PsychUIInputText',
+			'backend.ui.PsychUIOption','backend.ui.PsychUIScrollBar',
+			'backend.ui.PsychUISlider','backend.ui.PsychUIText',
+			'backend.ui.PsychUIList','backend.ui.PsychUIGroup',
+			'objects.StrumNote','objects.NoteSplash','objects.HealthIcon',
+			'objects.Bar','objects.AttachedSprite','objects.BGSprite',
 			'substates.PauseSubState','substates.GameOverSubstate',
-			'mikolka.funkin.custom.NativeFileSystem','mikolka.funkin.FunkinSprite',
-			'mikolka.funkin.FunkinSound','mikolka.funkin.Scoring','mikolka.funkin.Constants',
+			'mikolka.GameBorder','mikolka.FlxMacro',
+			'mikolka.vslice.components.crash.CrashServer',
+			'mikolka.vslice.components.crash.Logger',
+			'mikolka.vslice.components.DebugDisplay.FunkinDebugDisplay',
+			'mikolka.vslice.components.FunkinSoundTray',
+			'mikolka.vslice.ui.VSliceUI','mikolka.vslice.ui.VSliceButton',
+			'mikolka.vslice.ui.VSliceText','mikolka.vslice.ui.VSlicePanel',
+			'mikolka.funkin.FunkinSprite','mikolka.funkin.FunkinText',
+			'mikolka.funkin.FunkinGroup','mikolka.funkin.FunkinSound',
+			'mikolka.funkin.FunkinCamera','mikolka.funkin.FunkinTimer',
+			'mikolka.funkin.custom.NativeFileSystem',
+			'mikolka.funkin.custom.CustomInput',
+			'mikolka.funkin.custom.CustomControls',
+			'mikolka.funkin.custom.mobile.MobileScaleMode',
+			'mikolka.funkin.players.PlayerData',
+			'mikolka.funkin.players.PlayerStats',
+			'mikolka.funkin.players.CharacterData',
+			'mikolka.funkin.players.CharacterLoader',
+			'mikolka.funkin.utils.FunkinMath',
+			'mikolka.funkin.utils.FunkinColor',
+			'mikolka.funkin.utils.FunkinEase',
+			'mikolka.funkin.utils.FunkinTween',
+			'mikolka.funkin.utils.ArrayTools',
+			'mikolka.funkin.utils.SpriteTools',
+			'mikolka.funkin.utils.StringTools',
+			'mikolka.funkin.utils.custom.FunkinTools',
+			'mikolka.funkin.utils.custom.PsychUITools',
+			'mikolka.stages.cutscenes.dialogueBox.DialogueBox',
+			'mikolka.stages.cutscenes.dialogueBox.DialogueBoxPsych',
+			'mikolka.stages.cutscenes.dialogueBox.styles.DialogueStyle',
+			'mikolka.stages.cutscenes.dialogueBox.styles.PsychDialogueStyle',
+			'mikolka.stages.cutscenes.dialogueBox.styles.FNFDialogueStyle',
 			'mobile.backend.StorageUtil','mobile.backend.MobileData',
+			'mobile.backend.SwipeUtil','mobile.backend.TouchUtil',
 			'mobile.input.MobileInputID','mobile.input.MobileInputManager',
-			'mobile.objects.TouchPad','mobile.objects.Hitbox','mobile.objects.TouchButton'
+			'mobile.objects.TouchPad','mobile.objects.Hitbox',
+			'mobile.objects.TouchButton','mobile.objects.TouchZone',
+			'mobile.objects.ScrollableObject',
+			'sys.FileSystem','sys.io.File','sys.io.FileOutput',
+			'sys.io.Process','sys.io.Path',
 		];
-		
-for (name in classList) {
-    try {
-        var cls:Dynamic = Type.resolveClass(name);
-        if (cls == null) cls = Type.resolveEnum(name);
-        if (cls != null) {
-            var shortName = name.substr(name.lastIndexOf('.') + 1);
-            set(shortName, cls);
-        }
-    } catch (e:Dynamic) {}
-}
+
+		for (name in classList) {
+			try {
+				var cls:Dynamic = Type.resolveClass(name);
+				if (cls == null) cls = Type.resolveEnum(name);
+				if (cls != null) {
+					var shortName = name.substr(name.lastIndexOf('.') + 1);
+					set(shortName, cls);
+				}
+			} catch (e:Dynamic) {}
+		}
 
 		set('setVar', function(name:String, value:Dynamic) {
 			MusicBeatState.getVariables().set(name, value);
