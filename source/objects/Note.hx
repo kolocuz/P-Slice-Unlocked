@@ -4,12 +4,6 @@ import backend.animation.PsychAnimationController;
 import shaders.RGBPalette;
 import flixel.system.FlxAssets.FlxShader;
 
-typedef RGB = {
-	r:Null<Int>,
-	g:Null<Int>,
-	b:Null<Int>
-}
-
 typedef NoteSplashAnim = {
 	name:String,
 	noteData:Int,
