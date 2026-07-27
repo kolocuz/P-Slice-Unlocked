@@ -200,22 +200,18 @@ class MusicBeatState extends FlxState
 			if (ret != null && ret != LuaUtils.Function_Continue)
 				result = ret;
 		}
-		#if HSCRIPT_ALLOWED
-		for (script in globalHScripts)
-		{
-			if (script.interp == null) continue;
-			try
-			{
-				if (script.exists(func))
-				{
-					var ret = script.call(func, args ?? []);
-					if (ret != null && ret.returnValue != LuaUtils.Function_Continue)
-						result = ret.returnValue;
-				}
-			}
-			catch (e:Dynamic) {}
-		}
-		#end
+#if HSCRIPT_ALLOWED
+for (script in globalHScripts)
+{
+    try {
+        if (script.exists(func)) {
+            var ret = script.call(func, args ?? []);
+            if (ret != null && ret.returnValue != LuaUtils.Function_Continue)
+                result = ret.returnValue;
+        }
+    } catch (e:Dynamic) {}
+}
+#end
 		return result;
 	}
 	#end
