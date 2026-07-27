@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       platform:
-        description: 'Платформа'
+        description: 'Platform'
         required: true
         type: choice
         default: 'all'
@@ -14,15 +14,15 @@ on:
           - 'linux'
           - 'android'
           - 'desktop'
-      
+
       version:
-        description: 'Версия сборки'
+        description: 'Build version'
         required: true
         type: string
         default: '1.0.0'
-      
+
       build_mode:
-        description: 'Тип сборки'
+        description: 'Build type'
         required: true
         type: choice
         default: 'artifact'
@@ -107,21 +107,21 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download Windows
+      - name: Download Windows artifact
         if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
           path: ./artifacts/windows
 
-      - name: Download Linux
+      - name: Download Linux artifact
         if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
           path: ./artifacts/linux
 
-      - name: Download Android
+      - name: Download Android artifact
         if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
         uses: actions/download-artifact@v4
         with:
@@ -144,22 +144,7 @@ jobs:
         with:
           tag_name: v${{ inputs.version }}
           name: P-Slice Unlocked v${{ inputs.version }}
-          body: |
-            ## 🔓 P-Slice Unlocked v${{ inputs.version }}
-            
-            **Платформы:** ${{ inputs.platform }}
-            
-            ### 📥 Скачать:
-            - 🪟 Windows: `PSlice-Unlocked-v${{ inputs.version }}-Windows.zip`
-            - 🐧 Linux: `PSlice-Unlocked-v${{ inputs.version }}-Linux.zip`
-            - 📱 Android: `PSlice-Unlocked-v${{ inputs.version }}-Android.apk`
-            
-            ### 🔧 Что разблокировано:
-            - Все ограничения HScript сняты
-            - Полный доступ к файловой системе
-            - Выполнение системных команд
-            - Поддержка Extra Keys (до 18 клавиш)
-            - Firebase удалён
+          body: ${{ inputs.version }}
           draft: false
           prerelease: false
           files: |
