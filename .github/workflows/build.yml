@@ -78,6 +78,16 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
 
+      - name: Fix Firebase (Android)
+        if: inputs.exportPath == 'android'
+        run: |
+          mkdir -p export/release/android/bin/app
+          echo '{}' > export/release/android/bin/app/google-services.json
+          if [ -f export/release/android/bin/app/build.gradle ]; then
+            sed -i "/com.google.gms.google-services/d" export/release/android/bin/app/build.gradle
+            sed -i "/com.google.firebase/d" export/release/android/bin/app/build.gradle
+          fi
+
       - name: Compile
         run: haxelib run lime build ${{ inputs.buildArgs }}
 
