@@ -25,13 +25,12 @@ on:
         description: 'Тип сборки'
         required: true
         type: choice
-        default: 'release'
+        default: 'artifact'
         options:
+          - 'artifact'
           - 'release'
-          - 'debug'
 
 jobs:
-  # ==================== КЕШИ ====================
   BuildDesktopCache:
     name: Cache Desktop
     if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' || inputs.platform == 'linux' }}
@@ -52,7 +51,6 @@ jobs:
       setupScript: sh ./setup/mobile.sh
       CACHE_NAME: P-Slice-Unlocked-mobile-cache
 
-  # ==================== WINDOWS ====================
   BuildWindows:
     name: Windows
     if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
@@ -62,14 +60,13 @@ jobs:
     with:
       name: Windows
       os: windows-2022
-      buildArgs: ${{ format('windows{0}', inputs.build_mode == 'release' && ' -final' || ' -debug') }}
+      buildArgs: ${{ format('windows{0}', inputs.build_mode == 'release' && ' -final' || '') }}
       exportPath: windows
       artifactName: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
       cacheLibrariesPath: P-Slice-Unlocked-desktop-cache
       cachePath: ${{ format('PSlice-Unlocked-build-windows-v{0}', inputs.version) }}
       artifactPath: export\release\windows\bin\*
 
-  # ==================== LINUX ====================
   BuildLinux:
     name: Linux
     if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
@@ -79,14 +76,13 @@ jobs:
     with:
       name: Linux
       os: ubuntu-22.04
-      buildArgs: ${{ format('linux{0}', inputs.build_mode == 'release' && ' -final' || ' -debug') }}
+      buildArgs: ${{ format('linux{0}', inputs.build_mode == 'release' && ' -final' || '') }}
       exportPath: linux
       artifactName: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
       cacheLibrariesPath: P-Slice-Unlocked-desktop-cache
       cachePath: ${{ format('PSlice-Unlocked-build-linux-v{0}', inputs.version) }}
       artifactPath: export/release/linux/bin/*
 
-  # ==================== ANDROID ====================
   BuildAndroid:
     name: Android
     if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
@@ -96,14 +92,13 @@ jobs:
     with:
       name: Android
       os: ubuntu-24.04
-      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || ' -debug') }}
+      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
       exportPath: android
       cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
       cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
       artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
       artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
 
-  # ==================== РЕЛИЗ НА ГИТХАБ ====================
   CreateRelease:
     name: Create GitHub Release
     if: ${{ inputs.build_mode == 'release' && always() }}
@@ -153,22 +148,18 @@ jobs:
             ## 🔓 P-Slice Unlocked v${{ inputs.version }}
             
             **Платформы:** ${{ inputs.platform }}
-            **Тип сборки:** ${{ inputs.build_mode }}
             
             ### 📥 Скачать:
             - 🪟 Windows: `PSlice-Unlocked-v${{ inputs.version }}-Windows.zip`
             - 🐧 Linux: `PSlice-Unlocked-v${{ inputs.version }}-Linux.zip`
             - 📱 Android: `PSlice-Unlocked-v${{ inputs.version }}-Android.apk`
             
-            ### 🔧 Изменения:
-            - Все блокировки HScript сняты
+            ### 🔧 Что разблокировано:
+            - Все ограничения HScript сняты
             - Полный доступ к файловой системе
             - Выполнение системных команд
             - Поддержка Extra Keys (до 18 клавиш)
             - Firebase удалён
-            
-            ---
-            *Собрано через GitHub Actions*
           draft: false
           prerelease: false
           files: |
