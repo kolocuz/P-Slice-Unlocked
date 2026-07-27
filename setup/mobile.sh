@@ -21,7 +21,6 @@ haxelib install tjson 1.4.0 --quiet
 
 #Specific
 haxelib git hxdiscord_rpc https://github.com/MAJigsaw77/hxdiscord_rpc f9353b9edce10f4605d125dd1bda24ac36898bfb --quiet --skip-dependencies
-haxelib git firebase https://github.com/Psych-Slice/firebase.git --quiet
 haxelib install hxvlc 2.2.2 --quiet --skip-dependencies
 haxelib install extension-haptics 1.0.4 --quiet --skip-dependencies
 haxelib install extension-androidtools 2.2.2 --quiet --skip-dependencies
