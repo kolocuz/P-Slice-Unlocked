@@ -1,4 +1,4 @@
-name: Build P-Slice
+name: Build P-Slice Unlocked
 
 on:
   workflow_dispatch:
@@ -15,20 +15,20 @@ on:
           - 'android'
           - 'desktop'
       
+      version:
+        description: 'Версия сборки'
+        required: true
+        type: string
+        default: '1.0.0'
+      
       build_mode:
         description: 'Тип сборки'
         required: true
         type: choice
-        default: 'artifact'
+        default: 'release'
         options:
-          - 'artifact'
           - 'release'
-      
-      version:
-        description: 'Версия (для имени файла)'
-        required: false
-        type: string
-        default: '1.0.0'
+          - 'debug'
 
 jobs:
   # ==================== КЕШИ ====================
@@ -40,7 +40,7 @@ jobs:
     with:
       os: ubuntu-24.04
       setupScript: sh ./setup/unix.sh
-      CACHE_NAME: P-Slice.desktop-cache
+      CACHE_NAME: P-Slice-Unlocked-desktop-cache
 
   BuildMobileCache:
     name: Cache Mobile
@@ -50,7 +50,7 @@ jobs:
     with:
       os: ubuntu-24.04
       setupScript: sh ./setup/mobile.sh
-      CACHE_NAME: P-Slice.mobile-cache
+      CACHE_NAME: P-Slice-Unlocked-mobile-cache
 
   # ==================== WINDOWS ====================
   BuildWindows:
@@ -62,11 +62,11 @@ jobs:
     with:
       name: Windows
       os: windows-2022
-      buildArgs: ${{ format('windows{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      buildArgs: ${{ format('windows{0}', inputs.build_mode == 'release' && ' -final' || ' -debug') }}
       exportPath: windows
-      artifactName: ${{ format('PSlice-v{0}-Windows', inputs.version) }}
-      cacheLibrariesPath: P-Slice.desktop-cache
-      cachePath: P-Slice.build-windows
+      artifactName: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
+      cacheLibrariesPath: P-Slice-Unlocked-desktop-cache
+      cachePath: ${{ format('PSlice-Unlocked-build-windows-v{0}', inputs.version) }}
       artifactPath: export\release\windows\bin\*
 
   # ==================== LINUX ====================
@@ -79,11 +79,11 @@ jobs:
     with:
       name: Linux
       os: ubuntu-22.04
-      buildArgs: ${{ format('linux{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      buildArgs: ${{ format('linux{0}', inputs.build_mode == 'release' && ' -final' || ' -debug') }}
       exportPath: linux
-      artifactName: ${{ format('PSlice-v{0}-Linux', inputs.version) }}
-      cacheLibrariesPath: P-Slice.desktop-cache
-      cachePath: P-Slice.build-linux
+      artifactName: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
+      cacheLibrariesPath: P-Slice-Unlocked-desktop-cache
+      cachePath: ${{ format('PSlice-Unlocked-build-linux-v{0}', inputs.version) }}
       artifactPath: export/release/linux/bin/*
 
   # ==================== ANDROID ====================
@@ -96,14 +96,14 @@ jobs:
     with:
       name: Android
       os: ubuntu-24.04
-      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || ' -debug') }}
       exportPath: android
-      cacheLibrariesPath: P-Slice.mobile-cache
-      cachePath: P-Slice.build-android
-      artifactName: ${{ format('PSlice-v{0}-Android', inputs.version) }}
+      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
+      cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
+      artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
       artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
 
-  # ==================== РЕЛИЗ (только если выбран release) ====================
+  # ==================== РЕЛИЗ НА ГИТХАБ ====================
   CreateRelease:
     name: Create GitHub Release
     if: ${{ inputs.build_mode == 'release' && always() }}
@@ -116,21 +116,21 @@ jobs:
         if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
         uses: actions/download-artifact@v4
         with:
-          name: ${{ format('PSlice-v{0}-Windows', inputs.version) }}
+          name: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
           path: ./artifacts/windows
 
       - name: Download Linux
         if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
         uses: actions/download-artifact@v4
         with:
-          name: ${{ format('PSlice-v{0}-Linux', inputs.version) }}
+          name: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
           path: ./artifacts/linux
 
       - name: Download Android
         if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
         uses: actions/download-artifact@v4
         with:
-          name: ${{ format('PSlice-v{0}-Android', inputs.version) }}
+          name: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
           path: ./artifacts/android
 
       - name: Create ZIP archives
@@ -138,26 +138,39 @@ jobs:
           cd artifacts
           for dir in */; do
             if [ -d "$dir" ]; then
-              zip -r "../${dir%/}.zip" "$dir"
+              zip -r "../PSlice-Unlocked-v${{ inputs.version }}-${dir%/}.zip" "$dir"
             fi
           done
+          cd ..
+          ls -la *.zip
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ inputs.version }}
-          name: Release v${{ inputs.version }}
+          name: P-Slice Unlocked v${{ inputs.version }}
           body: |
-            ## P-Slice Engine v${{ inputs.version }}
+            ## 🔓 P-Slice Unlocked v${{ inputs.version }}
             
             **Платформы:** ${{ inputs.platform }}
             **Тип сборки:** ${{ inputs.build_mode }}
             
-            ### Скачать:
-            - Windows: PSlice-v${{ inputs.version }}-Windows.zip
-            - Linux: PSlice-v${{ inputs.version }}-Linux.zip
-            - Android: PSlice-v${{ inputs.version }}-Android.zip
+            ### 📥 Скачать:
+            - 🪟 Windows: `PSlice-Unlocked-v${{ inputs.version }}-Windows.zip`
+            - 🐧 Linux: `PSlice-Unlocked-v${{ inputs.version }}-Linux.zip`
+            - 📱 Android: `PSlice-Unlocked-v${{ inputs.version }}-Android.apk`
+            
+            ### 🔧 Изменения:
+            - Все блокировки HScript сняты
+            - Полный доступ к файловой системе
+            - Выполнение системных команд
+            - Поддержка Extra Keys (до 18 клавиш)
+            - Firebase удалён
+            
+            ---
+            *Собрано через GitHub Actions*
           draft: false
           prerelease: false
           files: |
             *.zip
+            artifacts/android/*.apk
