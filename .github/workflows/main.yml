@@ -1,73 +1,163 @@
-name: Build Windows, Linux and Android
+name: Build P-Slice
 
 on:
   workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Платформа'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - 'all'
+          - 'windows'
+          - 'linux'
+          - 'android'
+          - 'desktop'
+      
+      build_mode:
+        description: 'Тип сборки'
+        required: true
+        type: choice
+        default: 'artifact'
+        options:
+          - 'artifact'
+          - 'release'
+      
+      version:
+        description: 'Версия (для имени файла)'
+        required: false
+        type: string
+        default: '1.0.0'
 
 jobs:
+  # ==================== КЕШИ ====================
   BuildDesktopCache:
-    name: Build Desktop Cache
+    name: Cache Desktop
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' || inputs.platform == 'linux' }}
     permissions: write-all
     uses: ./.github/workflows/dependencies.yml
     with:
       os: ubuntu-24.04
       setupScript: sh ./setup/unix.sh
-      CACHE_NAME: P-Slice.1.0.desktop-cache
+      CACHE_NAME: P-Slice.desktop-cache
 
   BuildMobileCache:
-    name: Build Mobile Cache
+    name: Cache Mobile
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
     permissions: write-all
     uses: ./.github/workflows/dependencies.yml
     with:
       os: ubuntu-24.04
       setupScript: sh ./setup/mobile.sh
-      CACHE_NAME: P-Slice.1.0.mobile-cache
+      CACHE_NAME: P-Slice.mobile-cache
 
-  BuildDesktop:
-    name: Build Desktop
+  # ==================== WINDOWS ====================
+  BuildWindows:
+    name: Windows
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
     needs: BuildDesktopCache
     permissions: write-all
-    strategy:
-      matrix:
-        include:
-          - name: Windows
-            os: windows-2022
-            buildArgs: "windows -final"
-            exportPath: windows
-            artifactName: PSlice-Windows
-            cacheLibrariesPath: P-Slice.1.0.desktop-cache
-            cachePath: P-Slice.1.0.build-windows
-            artifactPath: export\release\windows\bin\*
-          - name: Linux
-            os: ubuntu-22.04
-            buildArgs: "linux -final"
-            exportPath: linux
-            artifactName: PSlice-Linux
-            cachePath: P-Slice.1.0.build-linux
-            cacheLibrariesPath: P-Slice.1.0.desktop-cache
-            artifactPath: export/release/linux/bin/*
     uses: ./.github/workflows/build.yml
     with:
-      name: ${{ matrix.name }}
-      os: ${{ matrix.os }}
-      buildArgs: ${{ matrix.buildArgs }}
-      cacheLibrariesPath: ${{ matrix.cacheLibrariesPath }}
-      exportPath: ${{ matrix.exportPath }}
-      artifactName: ${{ matrix.artifactName }}
-      artifactPath: ${{ matrix.artifactPath }}
-      cachePath: ${{ matrix.cachePath }}
+      name: Windows
+      os: windows-2022
+      buildArgs: ${{ format('windows{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      exportPath: windows
+      artifactName: ${{ format('PSlice-v{0}-Windows', inputs.version) }}
+      cacheLibrariesPath: P-Slice.desktop-cache
+      cachePath: P-Slice.build-windows
+      artifactPath: export\release\windows\bin\*
 
+  # ==================== LINUX ====================
+  BuildLinux:
+    name: Linux
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
+    needs: BuildDesktopCache
+    permissions: write-all
+    uses: ./.github/workflows/build.yml
+    with:
+      name: Linux
+      os: ubuntu-22.04
+      buildArgs: ${{ format('linux{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      exportPath: linux
+      artifactName: ${{ format('PSlice-v{0}-Linux', inputs.version) }}
+      cacheLibrariesPath: P-Slice.desktop-cache
+      cachePath: P-Slice.build-linux
+      artifactPath: export/release/linux/bin/*
+
+  # ==================== ANDROID ====================
   BuildAndroid:
-    name: Build Android
+    name: Android
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
     needs: BuildMobileCache
     permissions: write-all
     uses: ./.github/workflows/build.yml
-    secrets: inherit
     with:
       name: Android
       os: ubuntu-24.04
-      buildArgs: "android"
+      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
       exportPath: android
-      cacheLibrariesPath: P-Slice.1.0.mobile-cache
-      cachePath: P-Slice.1.0.build-android
-      artifactName: PSlice-Android
+      cacheLibrariesPath: P-Slice.mobile-cache
+      cachePath: P-Slice.build-android
+      artifactName: ${{ format('PSlice-v{0}-Android', inputs.version) }}
       artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
+
+  # ==================== РЕЛИЗ (только если выбран release) ====================
+  CreateRelease:
+    name: Create GitHub Release
+    if: ${{ inputs.build_mode == 'release' && always() }}
+    needs: [BuildWindows, BuildLinux, BuildAndroid]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ format('PSlice-v{0}-Windows', inputs.version) }}
+          path: ./artifacts/windows
+
+      - name: Download Linux
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ format('PSlice-v{0}-Linux', inputs.version) }}
+          path: ./artifacts/linux
+
+      - name: Download Android
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ format('PSlice-v{0}-Android', inputs.version) }}
+          path: ./artifacts/android
+
+      - name: Create ZIP archives
+        run: |
+          cd artifacts
+          for dir in */; do
+            if [ -d "$dir" ]; then
+              zip -r "../${dir%/}.zip" "$dir"
+            fi
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Release v${{ inputs.version }}
+          body: |
+            ## P-Slice Engine v${{ inputs.version }}
+            
+            **Платформы:** ${{ inputs.platform }}
+            **Тип сборки:** ${{ inputs.build_mode }}
+            
+            ### Скачать:
+            - Windows: PSlice-v${{ inputs.version }}-Windows.zip
+            - Linux: PSlice-v${{ inputs.version }}-Linux.zip
+            - Android: PSlice-v${{ inputs.version }}-Android.zip
+          draft: false
+          prerelease: false
+          files: |
+            *.zip
