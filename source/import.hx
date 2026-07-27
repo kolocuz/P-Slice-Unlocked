@@ -44,9 +44,6 @@ import extension.androidtools.os.Build.VERSION_CODES as AndroidVersionCode;
 //import android.os.BatteryManager as AndroidBatteryManager;
 #end
 
-#if FIREBASE_CRASH_HANDLER
-import extension.firebase.Crashlytics;
-#end
 
 #if sys
 import sys.*;
