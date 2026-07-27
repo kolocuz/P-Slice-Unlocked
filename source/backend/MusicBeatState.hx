@@ -49,7 +49,6 @@ class MusicBeatState extends FlxState
 		return Controls.instance;
 	}
 
-	// ========== ГЛОБАЛЬНЫЕ СКРИПТЫ ==========
 	#if LUA_ALLOWED
 	public static var globalLuaScripts:Array<FunkinLua> = [];
 	#end
@@ -125,22 +124,14 @@ class MusicBeatState extends FlxState
 			touchPad.cameras = [tpadCam];
 		}
 	}
-
-	override function destroy()
-	{
-		removeTouchPad();
-		removeHitbox();
-		
-		super.destroy();
-	}
 	#end
+
 	var _psychCameraInitialized:Bool = false;
 
 	public var variables:Map<String, Dynamic> = new Map<String, Dynamic>();
 	public static function getVariables()
 		return getState().variables;
 
-	// ========== ЗАГРУЗКА ГЛОБАЛЬНЫХ СКРИПТОВ ==========
 	#if LUA_ALLOWED
 	function loadGlobalScripts()
 	{
@@ -200,18 +191,18 @@ class MusicBeatState extends FlxState
 			if (ret != null && ret != LuaUtils.Function_Continue)
 				result = ret;
 		}
-#if HSCRIPT_ALLOWED
-for (script in globalHScripts)
-{
-    try {
-        if (script.exists(func)) {
-            var ret = script.call(func, args ?? []);
-            if (ret != null && ret.returnValue != LuaUtils.Function_Continue)
-                result = ret.returnValue;
-        }
-    } catch (e:Dynamic) {}
-}
-#end
+		#if HSCRIPT_ALLOWED
+		for (script in globalHScripts)
+		{
+			try {
+				if (script.exists(func)) {
+					var ret = script.call(func, args ?? []);
+					if (ret != null && ret.returnValue != LuaUtils.Function_Continue)
+						result = ret.returnValue;
+				}
+			} catch (e:Dynamic) {}
+		}
+		#end
 		return result;
 	}
 	#end
