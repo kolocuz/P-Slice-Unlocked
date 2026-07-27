@@ -2,7 +2,31 @@ package backend;
 
 import openfl.display.BitmapData;
 import flixel.FlxState;
+import flixel.FlxG;
+import flixel.util.FlxDestroyUtil;
+import flixel.addons.transition.FlxTransitionableState;
 import backend.PsychCamera;
+import backend.Paths;
+import backend.Mods;
+import backend.Controls;
+import backend.Conductor;
+import backend.ClientPrefs;
+import backend.CoolUtil;
+import backend.CustomFadeTransition;
+import backend.BaseStage;
+import mikolka.funkin.custom.NativeFileSystem;
+#if LUA_ALLOWED
+import psychlua.FunkinLua;
+import psychlua.LuaUtils;
+#end
+#if HSCRIPT_ALLOWED
+import psychlua.HScript;
+#end
+#if TOUCH_CONTROLS_ALLOWED
+import mobile.objects.TouchPad;
+import mobile.objects.Hitbox;
+import mobile.backend.MobileData;
+#end
 
 @:bitmap("assets/embed/images/ui/cursor.png")
 private class FunkinCursor extends BitmapData {}
@@ -28,6 +52,9 @@ class MusicBeatState extends FlxState
 	// ========== ГЛОБАЛЬНЫЕ СКРИПТЫ ==========
 	#if LUA_ALLOWED
 	public static var globalLuaScripts:Array<FunkinLua> = [];
+	#end
+	#if HSCRIPT_ALLOWED
+	public static var globalHScripts:Array<HScript> = [];
 	#end
 
 	#if TOUCH_CONTROLS_ALLOWED
@@ -117,7 +144,7 @@ class MusicBeatState extends FlxState
 	#if LUA_ALLOWED
 	function loadGlobalScripts()
 	{
-		if (globalLuaScripts.length > 0) return; // Уже загружены
+		if (globalLuaScripts.length > 0) return;
 
 		for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'global_scripts/'))
 		{
@@ -134,13 +161,31 @@ class MusicBeatState extends FlxState
 						var script = new FunkinLua(folder + file);
 						globalLuaScripts.push(script);
 						script.set('stateName', Type.getClassName(Type.getClass(this)));
-						trace('Global script loaded: $folder$file');
+						trace('Global Lua loaded: $folder$file');
 					}
 					catch (e:Dynamic)
 					{
 						trace('Error loading global script $file: $e');
 					}
 				}
+				
+				#if HSCRIPT_ALLOWED
+				if (file.toLowerCase().endsWith('.hx'))
+				{
+					try
+					{
+						var script = new HScript(null, folder + file);
+						globalHScripts.push(script);
+						if (script.exists('onCreate'))
+							script.call('onCreate');
+						trace('Global HScript loaded: $folder$file');
+					}
+					catch (e:Dynamic)
+					{
+						trace('Error loading global HScript $file: $e');
+					}
+				}
+				#end
 			}
 		}
 	}
@@ -155,6 +200,22 @@ class MusicBeatState extends FlxState
 			if (ret != null && ret != LuaUtils.Function_Continue)
 				result = ret;
 		}
+		#if HSCRIPT_ALLOWED
+		for (script in globalHScripts)
+		{
+			if (script.interp == null) continue;
+			try
+			{
+				if (script.exists(func))
+				{
+					var ret = script.call(func, args ?? []);
+					if (ret != null && ret.returnValue != LuaUtils.Function_Continue)
+						result = ret.returnValue;
+				}
+			}
+			catch (e:Dynamic) {}
+		}
+		#end
 		return result;
 	}
 	#end
@@ -168,7 +229,6 @@ class MusicBeatState extends FlxState
 		Mods.updatedOnState = false;
 		#end
 
-		// Загружаем глобальные скрипты при первом создании состояния
 		#if LUA_ALLOWED
 		loadGlobalScripts();
 		for (script in globalLuaScripts)
