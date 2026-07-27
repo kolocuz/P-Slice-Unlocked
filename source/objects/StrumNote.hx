@@ -2,8 +2,12 @@ package objects;
 
 import backend.animation.PsychAnimationController;
 
+import shaders.RGBPalette;
+import shaders.RGBPalette.RGBShaderReference;
+
 class StrumNote extends FlxSprite
 {
+	public var rgbShader:RGBShaderReference;
 	public var resetAnim:Float = 0;
 	private var noteData:Int = 0;
 	public var direction:Float = 90;
@@ -20,8 +24,26 @@ class StrumNote extends FlxSprite
 		return value;
 	}
 
+	public var useRGBShader:Bool = true;
 	public function new(x:Float, y:Float, leData:Int, player:Int) {
 		animation = new PsychAnimationController(this);
+
+		rgbShader = new RGBShaderReference(this, Note.initializeGlobalRGBShader(leData));
+		rgbShader.enabled = false;
+		if(PlayState.SONG != null && PlayState.SONG.disableNoteRGB) useRGBShader = false;
+		
+		var arr:Array<FlxColor> = ClientPrefs.data.arrowRGB[leData];
+		if(PlayState.isPixelStage) arr = ClientPrefs.data.arrowRGBPixel[leData];
+		
+		if(leData <= arr.length)
+		{
+			@:bypassAccessor
+			{
+				rgbShader.r = arr[0];
+				rgbShader.g = arr[1];
+				rgbShader.b = arr[2];
+			}
+		}
 
 		noteData = leData;
 		this.player = player;
@@ -31,12 +53,12 @@ class StrumNote extends FlxSprite
 
 		var skin:String = null;
 		if(PlayState.SONG != null && PlayState.SONG.arrowSkin != null && PlayState.SONG.arrowSkin.length > 1) skin = PlayState.SONG.arrowSkin;
-		else skin = Note.DEFAULT_NOTE_SKIN;
+		else skin = Note.defaultNoteSkin;
 
 		var customSkin:String = skin + Note.getNoteSkinPostfix();
 		if(Paths.fileExists('images/$customSkin.png', IMAGE)) skin = customSkin;
 
-		texture = skin;
+		texture = skin; //Load texture and anims
 		scrollFactor.set();
 		playAnim('static');
 	}
@@ -89,6 +111,7 @@ class StrumNote extends FlxSprite
 			animation.addByPrefix('red', 'arrowRIGHT');
 
 			antialiasing = ClientPrefs.data.antialiasing;
+			var noteScale = ClientPrefs.data.extraHints == "ARROWS";
 			setGraphicSize(Std.int(width * 0.7));
 
 			switch (Math.abs(noteData) % 4)
@@ -121,7 +144,20 @@ class StrumNote extends FlxSprite
 
 	public function playerPosition()
 	{
-		x += Note.swagWidth * (noteData - 2);
+		// Arrow mode hitboxes require arrows to be in special place.
+		x += Note.swagWidth * noteData;
+		#if TOUCH_CONTROLS_ALLOWED
+		final isHitboxArrowMode = ClientPrefs.data.extraHints == "ARROWS" && ClientPrefs.data.middleScroll;
+		//Spacing between arrows
+		final ARROW_SPREAD = 90;
+		if(isHitboxArrowMode && player == 1) {
+			x += ARROW_SPREAD * (noteData-1);
+			x -= 45;
+		}
+		#end
+		
+		x += 50;
+		x += ((FlxG.width / 2) * player);
 	}
 
 	override function update(elapsed:Float) {
@@ -142,5 +178,6 @@ class StrumNote extends FlxSprite
 			centerOffsets();
 			centerOrigin();
 		}
+		if(useRGBShader) rgbShader.enabled = (animation.curAnim != null && animation.curAnim.name != 'static');
 	}
 }
