@@ -35,10 +35,6 @@ class CrashHandler
 	private static function onUncaughtError(e:UncaughtErrorEvent):Void
 	{
 		var errorStack = CallStack.exceptionStack(true);
-		#if FIREBASE_CRASH_HANDLER
-		CrashServer.onCrash();
-        Crashlytics.sendCrashData(e.error,errorStack);
-        #end
 		var crash = UserErrorSubstate.collectErrorData(e.error,errorStack);
 		var crashState = new CrashState(crash);
 		e.preventDefault();
