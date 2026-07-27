@@ -164,6 +164,9 @@ class HScript extends Iris
 		set('Md5', haxe.crypto.Md5);
 		set('Sha1', haxe.crypto.Sha1);
 		set('Sha256', haxe.crypto.Sha256);
+		set('StringMap', haxe.ds.StringMap);
+		set('IntMap', haxe.ds.IntMap);
+		set('ObjectMap', haxe.ds.ObjectMap);
 		#end
 
 		set('FlxG', flixel.FlxG);
@@ -198,6 +201,56 @@ class HScript extends Iris
 		#if flxanimate
 		set('FlxAnimate', FlxAnimate);
 		#end
+
+		// ===== ВСЕ КЛАССЫ ДВИЖКА =====
+		var classList = [
+			'flixel.FlxState','flixel.FlxSubState','flixel.FlxObject','flixel.FlxBasic',
+			'flixel.util.FlxSave','flixel.util.FlxDestroyUtil','flixel.util.FlxStringUtil','flixel.util.FlxSort',
+			'flixel.math.FlxPoint','flixel.math.FlxRect','flixel.math.FlxAngle','flixel.math.FlxVelocity','flixel.math.FlxRandom',
+			'flixel.sound.FlxSound','flixel.tweens.FlxTweenType',
+			'flixel.group.FlxSpriteGroup','flixel.group.FlxGroup',
+			'flixel.addons.transition.FlxTransitionableState',
+			'flixel.system.FlxAssets.FlxShader','flixel.ui.FlxBar',
+			'flixel.animation.FlxAnimationController','flixel.graphics.FlxGraphic',
+			'flixel.graphics.frames.FlxAtlasFrames','flixel.graphics.frames.FlxFrame',
+			'flixel.input.keyboard.FlxKey','flixel.input.keyboard.FlxKeyboard',
+			'flixel.input.gamepad.FlxGamepad','flixel.input.gamepad.FlxGamepadInputID','flixel.input.mouse.FlxMouse',
+			'openfl.Lib','openfl.display.Stage','openfl.display.Sprite',
+			'openfl.display.Bitmap','openfl.display.BitmapData','openfl.display.Shape',
+			'openfl.display.Graphics','openfl.display.MovieClip','openfl.display.DisplayObject',
+			'openfl.text.TextField','openfl.text.TextFormat',
+			'openfl.geom.Rectangle','openfl.geom.Point','openfl.geom.Matrix','openfl.geom.ColorTransform',
+			'openfl.events.Event','openfl.events.MouseEvent','openfl.events.KeyboardEvent',
+			'openfl.media.Sound','openfl.media.SoundChannel',
+			'openfl.net.URLRequest','openfl.utils.Assets','openfl.utils.ByteArray',
+			'lime.app.Application','lime.ui.Window','lime.system.System',
+			'lime.graphics.Image','lime.media.AudioManager',
+			'states.LoadingState','states.FreeplayState','states.CreditsState','states.OptionsState',
+			'backend.Paths','backend.Conductor','backend.ClientPrefs','backend.Controls',
+			'backend.CoolUtil','backend.Difficulty','backend.Highscore','backend.Song',
+			'backend.WeekData','backend.StageData','backend.Rating','backend.Mods',
+			'backend.MusicBeatState','backend.MusicBeatSubstate','backend.BaseStage',
+			'backend.CustomFadeTransition','backend.NoteTypesConfig','backend.Language','backend.Discord',
+			'objects.StrumNote','objects.NoteSplash','objects.HealthIcon','objects.Bar',
+			'objects.AttachedSprite','objects.BGSprite',
+			'substates.PauseSubState','substates.GameOverSubstate',
+			'mikolka.funkin.custom.NativeFileSystem','mikolka.funkin.FunkinSprite',
+			'mikolka.funkin.FunkinSound','mikolka.funkin.Scoring','mikolka.funkin.Constants',
+			'mobile.backend.StorageUtil','mobile.backend.MobileData',
+			'mobile.input.MobileInputID','mobile.input.MobileInputManager',
+			'mobile.objects.TouchPad','mobile.objects.Hitbox','mobile.objects.TouchButton'
+		];
+
+		for (name in classList) {
+			try {
+				var cls = Type.resolveClass(name);
+				if (cls == null) cls = Type.resolveEnum(name);
+				if (cls != null) {
+					var shortName = name.substr(name.lastIndexOf('.') + 1);
+					set(shortName, cls);
+				}
+			} catch (e:Dynamic) {}
+		}
 
 		set('setVar', function(name:String, value:Dynamic) {
 			MusicBeatState.getVariables().set(name, value);
@@ -246,35 +299,30 @@ class HScript extends Iris
 		{
 			var controller = FlxG.gamepads.getByID(id);
 			if (controller == null) return 0.0;
-
 			return controller.getXAxis(leftStick ? LEFT_ANALOG_STICK : RIGHT_ANALOG_STICK);
 		});
 		set('gamepadAnalogY', function(id:Int, ?leftStick:Bool = true)
 		{
 			var controller = FlxG.gamepads.getByID(id);
 			if (controller == null) return 0.0;
-
 			return controller.getYAxis(leftStick ? LEFT_ANALOG_STICK : RIGHT_ANALOG_STICK);
 		});
 		set('gamepadJustPressed', function(id:Int, name:String)
 		{
 			var controller = FlxG.gamepads.getByID(id);
 			if (controller == null) return false;
-
 			return Reflect.getProperty(controller.justPressed, name) == true;
 		});
 		set('gamepadPressed', function(id:Int, name:String)
 		{
 			var controller = FlxG.gamepads.getByID(id);
 			if (controller == null) return false;
-
 			return Reflect.getProperty(controller.pressed, name) == true;
 		});
 		set('gamepadReleased', function(id:Int, name:String)
 		{
 			var controller = FlxG.gamepads.getByID(id);
 			if (controller == null) return false;
-
 			return Reflect.getProperty(controller.justReleased, name) == true;
 		});
 
@@ -318,14 +366,12 @@ class HScript extends Iris
 			for (script in PlayState.instance.luaArray)
 				if(script != null && script.lua != null && !script.closed)
 					Lua_helper.add_callback(script.lua, name, func);
-
 			FunkinLua.customFunctions.set(name, func);
 		});
 
 		set('createCallback', function(name:String, func:Dynamic, ?funk:FunkinLua = null)
 		{
 			if(funk == null) funk = parentLua;
-			
 			if(funk != null) funk.addLocalCallback(name, func);
 			else FunkinLua.luaTrace('createCallback ($name): 3rd argument is null', false, false, FlxColor.RED);
 		});
@@ -359,12 +405,10 @@ class HScript extends Iris
 		set("addTouchPad", (DPadMode:String, ActionMode:String) -> {
 			PlayState.instance.makeLuaTouchPad(DPadMode, ActionMode);
 			PlayState.instance.addLuaTouchPad();
-		  });
-  
+		});
 		set("removeTouchPad", () -> {
 			PlayState.instance.removeLuaTouchPad();
 		});
-  
 		set("addTouchPadCamera", () -> {
 			if(PlayState.instance.luaTouchPad == null){
 				FunkinLua.luaTrace('addTouchPadCamera: TPAD does not exist.');
@@ -372,15 +416,13 @@ class HScript extends Iris
 			}
 			PlayState.instance.addLuaTouchPadCamera();
 		});
-  
 		set("touchPadJustPressed", function(button:Dynamic):Bool {
 			if(PlayState.instance.luaTouchPad == null){
-			  FunkinLua.luaTrace('touchPadJustPressed: TPAD does not exist.');
-			  return false;
+				FunkinLua.luaTrace('touchPadJustPressed: TPAD does not exist.');
+				return false;
 			}
-		  return PlayState.instance.luaTouchPadJustPressed(button);
+			return PlayState.instance.luaTouchPadJustPressed(button);
 		});
-  
 		set("touchPadPressed", function(button:Dynamic):Bool {
 			if(PlayState.instance.luaTouchPad == null){
 				FunkinLua.luaTrace('touchPadPressed: TPAD does not exist.');
@@ -388,7 +430,6 @@ class HScript extends Iris
 			}
 			return PlayState.instance.luaTouchPadPressed(button);
 		});
-  
 		set("touchPadJustReleased", function(button:Dynamic):Bool {
 			if(PlayState.instance.luaTouchPad == null){
 				FunkinLua.luaTrace('touchPadJustReleased: TPAD does not exist.');
