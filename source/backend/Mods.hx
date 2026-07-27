@@ -30,6 +30,7 @@ class Mods
 		'fonts',
 		'scripts',
 		'achievements'
+		'global_scripts',
 	];
 
 	private static var globalMods:Array<String> = [];
