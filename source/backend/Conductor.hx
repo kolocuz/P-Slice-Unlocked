@@ -141,4 +141,23 @@ class Conductor
 
 		return bpm = newBPM;
 	}
+public static function getCrotchetAtTime(time:Float){
+	var lastChange = getBPMFromSeconds(time);
+	return lastChange.stepCrochet * 4;
+}
+
+public static function getBPMFromSeconds(time:Float){
+	var lastChange:BPMChangeEvent = {
+		stepTime: 0,
+		songTime: 0,
+		bpm: bpm,
+		stepCrochet: stepCrochet
+	}
+	for (i in 0...Conductor.bpmChangeMap.length)
+	{
+		if (time >= Conductor.bpmChangeMap[i].songTime)
+			lastChange = Conductor.bpmChangeMap[i];
+	}
+	return lastChange;
+}
 }
