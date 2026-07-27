@@ -24,7 +24,6 @@ haxelib git hxdiscord_rpc https://github.com/MAJigsaw77/hxdiscord_rpc f9353b9edc
 haxelib git firebase https://github.com/Psych-Slice/firebase.git --quiet
 haxelib install hxvlc 2.2.2 --quiet --skip-dependencies
 haxelib install extension-haptics 1.0.4 --quiet --skip-dependencies
-haxelib git extension-firebase-crashlytics https://github.com/mikolka9144/extension-firebase-crashlytics.git d9e783f83e0c2b15b6ef0770672f677f00e98153 --quiet --skip-dependencies
 haxelib install extension-androidtools 2.2.2 --quiet --skip-dependencies
 haxelib git linc_luajit https://github.com/Psych-Slice/linc_luajit-mobile.git --quiet
 echo Finished!
