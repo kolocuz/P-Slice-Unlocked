@@ -25,6 +25,11 @@ class MusicBeatState extends FlxState
 		return Controls.instance;
 	}
 
+	// ========== ГЛОБАЛЬНЫЕ СКРИПТЫ ==========
+	#if LUA_ALLOWED
+	public static var globalLuaScripts:Array<FunkinLua> = [];
+	#end
+
 	#if TOUCH_CONTROLS_ALLOWED
 	public var touchPad:TouchPad;
 	public var hitbox:Hitbox;
@@ -108,13 +113,71 @@ class MusicBeatState extends FlxState
 	public static function getVariables()
 		return getState().variables;
 
+	// ========== ЗАГРУЗКА ГЛОБАЛЬНЫХ СКРИПТОВ ==========
+	#if LUA_ALLOWED
+	function loadGlobalScripts()
+	{
+		if (globalLuaScripts.length > 0) return; // Уже загружены
+
+		for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'global_scripts/'))
+		{
+			#if linux
+			for (file in CoolUtil.sortAlphabetically(NativeFileSystem.readDirectory(folder)))
+			#else
+			for (file in NativeFileSystem.readDirectory(folder))
+			#end
+			{
+				if (file.toLowerCase().endsWith('.lua'))
+				{
+					try
+					{
+						var script = new FunkinLua(folder + file);
+						globalLuaScripts.push(script);
+						script.set('stateName', Type.getClassName(Type.getClass(this)));
+						trace('Global script loaded: $folder$file');
+					}
+					catch (e:Dynamic)
+					{
+						trace('Error loading global script $file: $e');
+					}
+				}
+			}
+		}
+	}
+
+	function callGlobalScripts(func:String, args:Array<Dynamic> = null):Dynamic
+	{
+		var result:Dynamic = LuaUtils.Function_Continue;
+		for (script in globalLuaScripts)
+		{
+			if (script.closed) continue;
+			var ret = script.call(func, args ?? []);
+			if (ret != null && ret != LuaUtils.Function_Continue)
+				result = ret;
+		}
+		return result;
+	}
+	#end
+
 	override function create() {
 		currentState = this;
 		var skip:Bool = FlxTransitionableState.skipNextTransOut;
-		// //? Should fix the funkin cursor for good
 		if(!(FlxG.mouse.cursor?.bitmapData is FunkinCursor)) FlxG.mouse.load(new FunkinCursor(0,0));
-		//nvm. too much lag
-		#if MODS_ALLOWED Mods.updatedOnState = false; #end
+
+		#if MODS_ALLOWED
+		Mods.updatedOnState = false;
+		#end
+
+		// Загружаем глобальные скрипты при первом создании состояния
+		#if LUA_ALLOWED
+		loadGlobalScripts();
+		for (script in globalLuaScripts)
+		{
+			script.set('stateName', Type.getClassName(Type.getClass(this)));
+		}
+		callGlobalScripts('onStateChange', [Type.getClassName(Type.getClass(this))]);
+		callGlobalScripts('onCreate', []);
+		#end
 
 		if(!_psychCameraInitialized) initPsychCamera();
 
@@ -125,6 +188,10 @@ class MusicBeatState extends FlxState
 		}
 		FlxTransitionableState.skipNextTransOut = false;
 		timePassedOnState = 0;
+
+		#if LUA_ALLOWED
+		callGlobalScripts('onCreatePost', []);
+		#end
 	}
 
 	public function initPsychCamera():PsychCamera
@@ -133,14 +200,12 @@ class MusicBeatState extends FlxState
 		FlxG.cameras.reset(camera);
 		FlxG.cameras.setDefaultDrawTarget(camera, true);
 		_psychCameraInitialized = true;
-		//trace('initialized psych camera ' + Sys.cpuTime());
 		return camera;
 	}
 
 	public static var timePassedOnState:Float = 0;
 	override function update(elapsed:Float)
 	{
-		//everyStep();
 		var oldStep:Int = curStep;
 		timePassedOnState += elapsed;
 
@@ -167,7 +232,15 @@ class MusicBeatState extends FlxState
 			stage.update(elapsed);
 		});
 
+		#if LUA_ALLOWED
+		callGlobalScripts('onUpdate', [elapsed]);
+		#end
+
 		super.update(elapsed);
+
+		#if LUA_ALLOWED
+		callGlobalScripts('onUpdatePost', [elapsed]);
+		#end
 	}
 
 	private function updateSection():Void
@@ -237,7 +310,6 @@ class MusicBeatState extends FlxState
 		FlxTransitionableState.skipNextTransIn = false;
 	}
 
-	// Custom made Trans in
 	public static function startTransition(nextState:FlxState = null)
 	{
 		if(nextState == null)
@@ -265,6 +337,10 @@ class MusicBeatState extends FlxState
 			stage.stepHit();
 		});
 
+		#if LUA_ALLOWED
+		callGlobalScripts('onStepHit', []);
+		#end
+
 		if (curStep % 4 == 0)
 			beatHit();
 	}
@@ -272,21 +348,27 @@ class MusicBeatState extends FlxState
 	public var stages:Array<BaseStage> = [];
 	public function beatHit():Void
 	{
-		//trace('Beat: ' + curBeat);
 		stagesFunc(function(stage:BaseStage) {
 			stage.curBeat = curBeat;
 			stage.curDecBeat = curDecBeat;
 			stage.beatHit();
 		});
+
+		#if LUA_ALLOWED
+		callGlobalScripts('onBeatHit', []);
+		#end
 	}
 
 	public function sectionHit():Void
 	{
-		//trace('Section: ' + curSection + ', Beat: ' + curBeat + ', Step: ' + curStep);
 		stagesFunc(function(stage:BaseStage) {
 			stage.curSection = curSection;
 			stage.sectionHit();
 		});
+
+		#if LUA_ALLOWED
+		callGlobalScripts('onSectionHit', []);
+		#end
 	}
 
 	public function stagesFunc(func:BaseStage->Void)
@@ -294,6 +376,21 @@ class MusicBeatState extends FlxState
 		for (stage in stages)
 			if(stage != null && stage.exists && stage.active)
 				func(stage);
+	}
+
+	override function destroy()
+	{
+		#if TOUCH_CONTROLS_ALLOWED
+		removeTouchPad();
+		removeHitbox();
+		#end
+
+		#if LUA_ALLOWED
+		callGlobalScripts('onStateDestroy', [Type.getClassName(Type.getClass(this))]);
+		callGlobalScripts('onDestroy', []);
+		#end
+		
+		super.destroy();
 	}
 
 	function getBeatsOnSection()
