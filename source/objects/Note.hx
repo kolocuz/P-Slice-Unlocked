@@ -10,7 +10,8 @@ import objects.StrumNote;
 
 import flixel.math.FlxRect;
 
-
+private static var _lastValidChecked:String = '';
+private var _loadedSkin:String = '';
 
 typedef EventNote = {
 	strumTime:Float,
