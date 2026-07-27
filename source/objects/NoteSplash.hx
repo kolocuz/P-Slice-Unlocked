@@ -30,10 +30,11 @@ typedef NoteSplashConfig = {
 class NoteSplash extends FlxSprite
 {
 	public var rgbShader:PixelSplashShaderRef;
-	public var texture:String;
+	public var texture:String = "";
 	public var config(default, set):NoteSplashConfig;
 	public var babyArrow:StrumNote;
 	public var noteData:Int = 0;
+	private var animId:Int = 0;
 
 	public var copyX:Bool = true;
 	public var copyY:Bool = true;
@@ -83,6 +84,8 @@ class NoteSplash extends FlxSprite
 		}
 
 		var path:String = 'images/$texture';
+
+		// ===== КЕШИРОВАНИЕ КОНФИГОВ =====
 		if (configs.exists(path))
 		{
 			this.config = configs.get(path);
@@ -125,7 +128,7 @@ class NoteSplash extends FlxSprite
 		var anim:String = 'note splash';
 		var fps:Array<Null<Int>> = [22, 26];
 		var offsets:Array<Array<Float>> = [[0, 0]];
-		if (Paths.fileExists('$path.txt', TEXT)) // Backwards compatibility with 0.7 splash txts
+		if (Paths.fileExists('$path.txt', TEXT))
 		{
 			var configFile:Array<String> = CoolUtil.listFromString(Paths.getTextFromFile('$path.txt'));
 			if (configFile.length > 0)
@@ -188,55 +191,70 @@ class NoteSplash extends FlxSprite
 		configs.set(path, this.config);
 	}
 
-	public function spawnSplashNote(?x:Float = 0, ?y:Float = 0, ?noteData:Int = 0, ?note:Note, ?randomize:Bool = true)
-	{
+	public function spawnSplashNote(note:Note, ?noteData:Null<Int>, ?randomize:Bool = true)
+	{	
+		if (note != null && note.noteSplashData.texture != null)
+			loadSplash(note.noteSplashData.texture);
+
 		if (note != null && note.noteSplashData.disabled)
 			return;
 
-		aliveTime = 0;
+		if (babyArrow != null)
+			setPosition(babyArrow.x - Note.swagWidth * 0.95, babyArrow.y - Note.swagWidth);
 
-		if (!inEditor)
+		if (noteData == null)
+			noteData = note != null ? note.noteData : 0;
+
+		if (randomize)
 		{
-			var loadedTexture:String = defaultNoteSplash + getSplashSkinPostfix();
-			if (note != null && note.noteSplashData.texture != null) loadedTexture = note.noteSplashData.texture;
-			else if (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0) loadedTexture = PlayState.SONG.splashSkin;
+			var anims:Int = 0;
+			var datas:Int = 0;
 
-			if (texture != loadedTexture) loadSplash(loadedTexture);
+			while (true)
+			{
+				var data:Int = noteData % Note.colArray.length + (datas * Note.colArray.length); 
+				if (!noteDataMap.exists(data) || !animation.exists(noteDataMap[data]))
+					break;
+
+				datas++;
+				anims++;
+			}
+
+			animId = anims > 1 ? FlxG.random.int(0, anims - 1) : 0;
 		}
 
-		setPosition(x, y);
-
-		if (babyArrow != null)
-			setPosition(babyArrow.x - Note.swagWidth * 0.95, babyArrow.y - Note.swagWidth); // To prevent it from being misplaced for one game tick
-
-		if (note != null)
-			noteData = note.noteData;
-
-		if (randomize && maxAnims > 1)
-			noteData = noteData % Note.colArray.length + (FlxG.random.int(0, maxAnims - 1) * Note.colArray.length);
-
 		this.noteData = noteData;
-		var anim:String = playDefaultAnim();
+		var anim:String = playDefaultAnim(noteData % Note.colArray.length + animId * Note.colArray.length);
+		
+		if (note != null) {
+			alpha = note.noteSplashData.a - (1 - note.strum.alpha);
+			antialiasing = note.noteSplashData.antialiasing;
+		} else {
+			alpha = ClientPrefs.data.splashAlpha;
+			antialiasing = !PlayState.isPixelStage;
+		}
+
+		if(PlayState.isPixelStage) antialiasing = false;
 
 		var tempShader:RGBPalette = null;
 		if (config.allowRGB)
 		{
 			Note.initializeGlobalRGBShader(noteData % Note.colArray.length);
-			if (inEditor || (note == null || note.noteSplashData.useRGBShader) && (PlayState.SONG == null || !PlayState.SONG.disableNoteRGB))
+			if(((cast FlxG.state) is NoteSplashEditorState) || 
+				((note == null || note.noteSplashData.useRGBShader) && (PlayState.SONG == null || !PlayState.SONG.disableNoteRGB)))
 			{
-				tempShader = new RGBPalette();
-				// If Note RGB is enabled:
-				if ((note == null || !note.noteSplashData.useGlobalShader) || inEditor)
+				if((note == null || !note.noteSplashData.useGlobalShader) || ((cast FlxG.state) is NoteSplashEditorState))
 				{
 					var colors = config.rgb;
 					if (colors != null)
 					{
+						tempShader = new RGBPalette();
 						for (i in 0...colors.length)
 						{
 							if (i > 2) break;
 
 							var arr:Array<FlxColor> = ClientPrefs.data.arrowRGB[noteData % Note.colArray.length];
-							if (PlayState.isPixelStage) arr = ClientPrefs.data.arrowRGBPixel[noteData % Note.colArray.length];
+							if(PlayState.isPixelStage) arr = ClientPrefs.data.arrowRGBPixel[noteData % Note.colArray.length];
 
 							var rgb = colors[i];
 							if (rgb == null)
@@ -259,7 +277,7 @@ class NoteSplash extends FlxSprite
 							if (i == 0) tempShader.r = color;
 							else if (i == 1) tempShader.g = color;
 							else if (i == 2) tempShader.b = color;
-						}
+						} 
 					}
 					else tempShader.copyValues(Note.globalRgbShaders[noteData % Note.colArray.length]);
 
@@ -274,68 +292,58 @@ class NoteSplash extends FlxSprite
 			}
 		}
 		rgbShader.copyValues(tempShader);
-		if (!config.allowPixel) rgbShader.pixelAmount = 1;
-		else if (PlayState.isPixelStage) rgbShader.pixelAmount = 6;
 
-		offset.set(10, 10);
-		var conf:NoteSplashAnim = config.animations.get(anim);
+		if(!config.allowPixel) rgbShader.pixelAmount = 1;
+
+		var conf = config.animations.get(anim);
 		var offsets:Array<Float> = [0, 0];
-		if (conf != null) offsets = conf.offsets;
+
+		if (conf != null)
+			offsets = conf.offsets;
+
 		if (offsets != null)
 		{
-			offset.x += offsets[0];
-			offset.y += offsets[1];
+			centerOffsets();
+			offset.set(offsets[0], offsets[1]);
 		}
 
-		animation.finishCallback = function(name:String) {
-			kill();
-			spawned = false;
-		}
-
-		alpha = ClientPrefs.data.splashAlpha;
-		if (note != null) alpha = note.noteSplashData.a;
-
-		antialiasing = ClientPrefs.data.antialiasing;
-		if (note != null) antialiasing = note.noteSplashData.antialiasing;
-		if (PlayState.isPixelStage && config.allowPixel) antialiasing = false;
-
-		var minFps:Int = 22;
-		var maxFps:Int = 26;
-		if (conf != null)
+		animation.finishCallback = function(name:String)
 		{
-			minFps = conf.fps[0];
+			PlayState.instance != null ? killLimit() : kill();
+		};
+
+		if(animation.curAnim != null && conf != null)
+		{
+			var minFps = conf.fps[0];
 			if (minFps < 0) minFps = 0;
 
-			maxFps = conf.fps[1];
+			var maxFps = conf.fps[1];
 			if (maxFps < 0) maxFps = 0;
-		}
 
-		if (animation.curAnim != null)
 			animation.curAnim.frameRate = FlxG.random.int(minFps, maxFps);
-
-		spawned = true;
+		}
 	}
 	
-	public function playDefaultAnim()
+	public function playDefaultAnim(noteAnim:Int = 0)
 	{
-		var anim:String = noteDataMap.get(noteData);
-		if (anim != null && animation.exists(anim))
-			animation.play(anim, true);
-
-		return anim;
+		var animation:String = noteDataMap.get(noteAnim);
+		if (animation != null && this.animation.exists(animation))
+			this.animation.play(animation, true);
+		else kill();
+		return animation;
 	}
 
 	function checkForAnim(anim:String)
 	{
 		var animFrames = [];
 		@:privateAccess
-		animation.findByPrefix(animFrames, anim); // adds valid frames to animFrames
+		animation.findByPrefix(animFrames, anim);
 
 		return animFrames.length > 0;
 	}
 
 	var aliveTime:Float = 0;
-	static var buggedKillTime:Float = 0.5; //automatically kills note splashes if they break to prevent it from flooding your HUD
+	final buggedKillTime:Float = 0.5;
 	override function update(elapsed:Float)
 	{
 		if (spawned)
@@ -413,6 +421,21 @@ class NoteSplash extends FlxSprite
 		return config = value;
 	}
 
+	var before:Int; var after:Int;
+	public function killLimit(targetId:Int = -1) {
+		try {
+			before = PlayState.splashUsing[noteData].length;
+			if (targetId != -1) PlayState.splashUsing[noteData].splice(targetId, 1);
+			else PlayState.splashUsing[noteData].splice(0, 1);
+			after = PlayState.splashUsing[noteData].length;
+		} catch (e) {}
+		kill();
+	}
+
+	override function kill() {
+		super.kill();
+	}
+	
 	function set_maxAnims(value:Int)
 	{
 		if (value > 0)
@@ -473,7 +496,6 @@ class PixelSplashShaderRef
 
 		if (!PlayState.isPixelStage) pixelAmount = 1;
 		else pixelAmount = PlayState.daPixelZoom;
-		//trace('Created shader ' + Conductor.songPosition);
 	}
 }
 
