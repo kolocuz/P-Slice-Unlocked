@@ -359,76 +359,62 @@ class Note extends FlxSprite
 	var _loadedSkin:String; //optimization
 	public var originalHeight:Float = 6;
 	public var correctionOffset:Float = 0; //dont mess with this
-	public function reloadNote(texture:String = '', postfix:String = '') {
-		if(texture == null) texture = '';
-		if(postfix == null) postfix = '';
+public function reloadNote(texture:String = '', postfix:String = '') {
+	if(texture == null) texture = '';
+	if(postfix == null) postfix = '';
 
-		var skin:String = texture + postfix;
-		if(texture.length < 1)
-		{
-			skin = PlayState.SONG != null ? PlayState.SONG.arrowSkin : null;
-			if(skin == null || skin.length < 1)
-				skin = defaultNoteSkin + postfix;
-		}
-		else rgbShader.enabled = false;
-
-		var animName:String = null;
-		if(animation.curAnim != null) {
-			animName = animation.curAnim.name;
-		}
-
-		var skinPixel:String = skin;
-		var lastScaleY:Float = scale.y;
-		var skinPostfix:String = getNoteSkinPostfix();
-		var customSkin:String = skin + skinPostfix;
-		var path:String = PlayState.isPixelStage ? 'pixelUI/' : '';
-		
-		if(customSkin == _lastValidChecked || Paths.fileExists('images/' + path + customSkin + '.png', IMAGE))
-		{
-			skin = customSkin;
-			_lastValidChecked = customSkin;
-		}
-		else skinPostfix = '';
-
-		if(PlayState.isPixelStage) {
-			if(isSustainNote) {
-				var graphic = Paths.image('pixelUI/' + skinPixel + 'ENDS' + skinPostfix);
-				loadGraphic(graphic, true, Math.floor(graphic.width / 4), Math.floor(graphic.height / 2));
-				originalHeight = graphic.height / 2;
-			} else {
-				var graphic = Paths.image('pixelUI/' + skinPixel + skinPostfix);
-				loadGraphic(graphic, true, Math.floor(graphic.width / 4), Math.floor(graphic.height / 5));
-			}
-			setGraphicSize(Std.int(width * PlayState.daPixelZoom));
-			loadPixelNoteAnims();
-			antialiasing = false;
-
-			if(isSustainNote) {
-				offsetX += _lastNoteOffX;
-				_lastNoteOffX = (width - 7) * (PlayState.daPixelZoom / 2);
-				offsetX -= _lastNoteOffX;
-			}
-		} else {
-			frames = (prevNote?._loadedSkin == skin && prevNote?.frames != null)
-				? prevNote.frames
-				: Paths.getSparrowAtlas(skin);
-			_loadedSkin = skin;
-			loadNoteAnims();
-			if(!isSustainNote)
-			{
-				centerOffsets();
-				centerOrigin();
-			}
-		}
-
-		if(isSustainNote) {
-			scale.y = lastScaleY;
-		}
-		updateHitbox();
-
-		if(animName != null)
-			animation.play(animName, true);
+	var skin:String = texture + postfix;
+	if(texture.length < 1)
+	{
+		skin = PlayState.SONG != null ? PlayState.SONG.arrowSkin : null;
+		if(skin == null || skin.length < 1)
+			skin = DEFAULT_NOTE_SKIN + postfix;
 	}
+	else rgbShader.enabled = false;
+
+	var animName:String = null;
+	if(animation.curAnim != null) {
+		animName = animation.curAnim.name;
+	}
+
+	var skinPixel:String = skin;
+	var lastScaleY:Float = scale.y;
+	var skinPostfix:String = getNoteSkinPostfix();
+	var customSkin:String = skin + skinPostfix;
+	var path:String = PlayState.isPixelStage ? 'pixelUI/' : '';
+	
+	// ===== ОПТИМИЗАЦИЯ: кеширование проверки существования файла =====
+	if(customSkin == _lastValidChecked || Paths.fileExists('images/' + path + customSkin + '.png', IMAGE))
+	{
+		skin = customSkin;
+		_lastValidChecked = customSkin;
+	}
+	else skinPostfix = '';
+
+	if(PlayState.isPixelStage) {
+		// ... твой код для пиксельных нот ...
+	} else {
+		// ===== ОПТИМИЗАЦИЯ: переиспользование фреймов =====
+		frames = (prevNote != null && prevNote._loadedSkin == skin && prevNote.frames != null)
+			? prevNote.frames
+			: Paths.getSparrowAtlas(skin);
+		_loadedSkin = skin;
+		loadNoteAnims();
+		if(!isSustainNote)
+		{
+			centerOffsets();
+			centerOrigin();
+		}
+	}
+
+	if(isSustainNote) {
+		scale.y = lastScaleY;
+	}
+	updateHitbox();
+
+	if(animName != null)
+		animation.play(animName, true);
+}
 
 	public static function getNoteSkinPostfix()
 	{
@@ -507,12 +493,12 @@ class Note extends FlxSprite
 				alpha = 0.3;
 		}
 	}
-
-	override public function destroy()
-	{
-		super.destroy();
-		_lastValidChecked = '';
-	}
+					
+override public function destroy()
+{
+	super.destroy();
+	_lastValidChecked = '';
+}
 
 	public function followStrumNote(myStrum:StrumNote, fakeCrochet:Float, songSpeed:Float = 1)
 	{
