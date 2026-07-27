@@ -42,7 +42,6 @@ class NoteTypesConfig
 				property: arr,
 				value: _interpretValue(line.substr(sep + 1).trim())
 			}
-			//trace('pushing $newProp');
 			parsed.push(newProp);
 		}
 		noteTypesData.set(name, parsed);
@@ -66,7 +65,7 @@ class NoteTypesConfig
 					continue;
 				}
 
-				switch(split[0]) // special cases
+				switch(split[0])
 				{
 					case 'extraData': 
 						note.extraData.set(split[1], line.value);
@@ -95,18 +94,16 @@ class NoteTypesConfig
 			{
 				var str:Dynamic = propArray[i];
 				var id:Int = Std.parseInt(str.substr(0, str.length-1).trim());
-				if(i < propArray.length-1) obj = obj[id]; //middles
-				else if (setProp) return obj[id] = valueToSet; //last
+				if(i < propArray.length-1) obj = obj[id];
+				else if (setProp) return obj[id] = valueToSet;
 			}
 			return obj;
 		}
 		else if(setProp)
 		{
-			//trace('setProp: $slice');
 			Reflect.setProperty(obj, slice, valueToSet);
 			return valueToSet;
 		}
-		//trace('getting prop: $slice');
 		return Reflect.getProperty(obj, slice);
 	}
 
@@ -114,18 +111,14 @@ class NoteTypesConfig
 	{
 		if(value.charAt(0) == "'" || value.charAt(0) == '"')
 		{
-			//is a string
 			return value.substring(1, value.length-1);
 		}
 		
 		switch(value)
 		{
-			case "true":
-				return true;
-			case "false":
-				return false;
-			case "null":
-				return null;
+			case "true": return true;
+			case "false": return false;
+			case "null": return null;
 		}
 
 		if(value.contains('.')) return Std.parseFloat(value);
