@@ -19,7 +19,7 @@
 <h3 align="center">P-Slice Unlocked</h3>
 
   <p align="center">
-    Fork of P-Slice Engine with HScript fully unlocked, Firebase removed, and optimized for desktop builds.
+    Fork of P-Slice Engine with HScript fully unlocked
     <br />
     <a href="https://github.com/Psych-Slice/P-Slice/wiki"><strong>Explore the Wiki »</strong></a>
     <br />
@@ -41,8 +41,6 @@
 
 This fork focuses on:
 - **Unlocking HScript** — Full access to Haxe runtime for modders.
-- **Removing Firebase** — Cleaner builds without crash reporting overhead.
-- **Optimizing desktop builds** — Faster compilation and lighter binaries.
 
 Original P-Slice Engine by mikolka9144.
 
