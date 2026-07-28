@@ -222,6 +222,12 @@
                 <haxedef name="HXCPP_STACK_LINE" />
                 <haxedef name="HXCPP_STACK_TRACE" />
                 <haxedef name="HXCPP_CATCH_SEGV" />
+<haxedef name="HXCPP_GC_GENERATIONAL" />
+<haxedef name="HXCPP_GC_MOVING" />
+<haxedef name="HXCPP_GC_DYNAMIC_SIZE" />
+<haxedef name="HXCPP_GC_BIG_BLOCKS" />
+<haxedef name="HXCPP_GC_SUMMARY" />
+<haxedef name="HXCPP_GC_DEBUG_LEVEL" value="1" />
         </section>
         <section if="ios">
                 <haxedef name="HXCPP_ARM64" />
