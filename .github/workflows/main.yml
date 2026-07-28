@@ -90,47 +90,45 @@ jobs:
     permissions: write-all
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Restore Haxe libraries cache
-        uses: actions/cache/restore@v3
+      - name: Setup Haxe
+        uses: ./.github/actions/setup-haxe
+        with:
+          haxe-version: 4.3.6
+
+      - name: Restore mobile cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.haxelib
             ~/.hxcpp
-          key: ${{ runner.os }}-haxe-${{ hashFiles('setup/mobile.sh') }}
-          restore-keys: |
-            ${{ runner.os }}-haxe-
+          key: ${{ runner.os }}-mobile-${{ hashFiles('setup/mobile.sh') }}
 
-      - name: Install Haxe dependencies
-        run: |
-          chmod +x setup/mobile.sh
-          sh ./setup/mobile.sh
+      - name: Install dependencies
+        run: sh ./setup/mobile.sh
 
-      - name: Save Haxe libraries cache
-        uses: actions/cache/save@v3
+      - name: Save mobile cache
+        uses: actions/cache/save@v4
         with:
           path: |
             ~/.haxelib
             ~/.hxcpp
-          key: ${{ runner.os }}-haxe-${{ hashFiles('setup/mobile.sh') }}
+          key: ${{ runner.os }}-mobile-${{ hashFiles('setup/mobile.sh') }}
 
       - name: Build Android
         run: |
           lime build android ${{ inputs.build_mode == 'release' && '-final' || '' }}
 
-      - name: 🔥 NUKE FIREBASE from generated build.gradle
+      - name: Remove Firebase from build.gradle
         run: |
-          echo "🔥 Looking for build.gradle files..."
-          find . -name "build.gradle" -type f -print0 | while IFS= read -r -d '' file; do
-            echo "Processing $file"
-            sed -i '/firebaseCrashlytics()/d' "$file"
-            sed -i '/google-services/d' "$file"
-            sed -i '/com.google.firebase/d' "$file"
-          done
-          echo "🔥 Firebase removed from all build.gradle files!"
+          find . -name "build.gradle" -exec sed -i '/firebaseCrashlytics()/d' {} \;
+          find . -name "build.gradle" -exec sed -i '/google-services/d' {} \;
+          find . -name "build.gradle" -exec sed -i '/com.google.firebase/d' {} \;
+          echo "🔥 Firebase removed!"
 
-      - name: Upload Android artifact
+      - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
@@ -145,21 +143,21 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download Windows artifact
+      - name: Download Windows
         if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
           path: ./artifacts/windows
 
-      - name: Download Linux artifact
+      - name: Download Linux
         if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
           path: ./artifacts/linux
 
-      - name: Download Android artifact
+      - name: Download Android
         if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
         uses: actions/download-artifact@v4
         with:
