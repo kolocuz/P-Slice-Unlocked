@@ -3932,11 +3932,12 @@ override public function destroy()
     NoteSplash.configs.clear();
     instance = null;
 
+	super.destroy();
+	
     #if cpp
     cpp.vm.Gc.run(true);
     #end
 
-    super.destroy();
 }
 
 var lastStepHit:Int = -1;
