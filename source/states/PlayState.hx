@@ -3863,198 +3863,13 @@ public function spawnNoteSplash(note:Note, strum:StrumNote)
 
 override public function destroy()
 {
-    if (notes != null)
-    {
-        notes.forEachAlive(function(note:Note)
-        {
-            note.destroy();
-        });
-        notes.clear();
-        notes = null;
-    }
-
-    if (inst != null)
-    {
-        inst.stop();
-        inst.destroy();
-        inst = null;
-    }
-
-    if (vocals != null)
-    {
-        vocals.stop();
-        vocals.destroy();
-        vocals = null;
-    }
-
-    if (opponentVocals != null)
-    {
-        opponentVocals.stop();
-        opponentVocals.destroy();
-        opponentVocals = null;
-    }
-
-    if (boyfriendGroup != null)
-    {
-        boyfriendGroup.forEachAlive(function(spr:FlxSprite)
-        {
-            spr.destroy();
-        });
-        boyfriendGroup.clear();
-        boyfriendGroup = null;
-    }
-
-    if (dadGroup != null)
-    {
-        dadGroup.forEachAlive(function(spr:FlxSprite)
-        {
-            spr.destroy();
-        });
-        dadGroup.clear();
-        dadGroup = null;
-    }
-
-    if (gfGroup != null)
-    {
-        gfGroup.forEachAlive(function(spr:FlxSprite)
-        {
-            spr.destroy();
-        });
-        gfGroup.clear();
-        gfGroup = null;
-    }
-
-    if (uiGroup != null)
-    {
-        uiGroup.forEachAlive(function(spr:FlxSprite)
-        {
-            spr.destroy();
-        });
-        uiGroup.clear();
-        uiGroup = null;
-    }
-
-    if (noteGroup != null)
-    {
-        noteGroup.forEachAlive(function(basic:FlxBasic)
-        {
-            basic.destroy();
-        });
-        noteGroup.clear();
-        noteGroup = null;
-    }
-
-    if (strumLineNotes != null)
-    {
-        strumLineNotes.forEachAlive(function(strum:StrumNote)
-        {
-            strum.destroy();
-        });
-        strumLineNotes.clear();
-        strumLineNotes = null;
-    }
-
-    if (playerStrums != null)
-    {
-        playerStrums.forEachAlive(function(strum:StrumNote)
-        {
-            strum.destroy();
-        });
-        playerStrums.clear();
-        playerStrums = null;
-    }
-
-    if (opponentStrums != null)
-    {
-        opponentStrums.forEachAlive(function(strum:StrumNote)
-        {
-            strum.destroy();
-        });
-        opponentStrums.clear();
-        opponentStrums = null;
-    }
-
-    if (grpNoteSplashes != null)
-    {
-        grpNoteSplashes.forEachAlive(function(splash:NoteSplash)
-        {
-            splash.destroy();
-        });
-        grpNoteSplashes.clear();
-        grpNoteSplashes = null;
-    }
-
-    if (grpHoldSplashes != null)
-    {
-        grpHoldSplashes.forEachAlive(function(splash:SustainSplash)
-        {
-            splash.destroy();
-        });
-        grpHoldSplashes.clear();
-        grpHoldSplashes = null;
-    }
-
-    if (healthBar != null)
-    {
-        healthBar.destroy();
-        healthBar = null;
-    }
-
-    if (timeBar != null)
-    {
-        timeBar.destroy();
-        timeBar = null;
-    }
-
-    if (iconP1 != null)
-    {
-        iconP1.destroy();
-        iconP1 = null;
-    }
-
-    if (iconP2 != null)
-    {
-        iconP2.destroy();
-        iconP2 = null;
-    }
-
-    if (scoreTxt != null)
-    {
-        scoreTxt.destroy();
-        scoreTxt = null;
-    }
-
-    if (timeTxt != null)
-    {
-        timeTxt.destroy();
-        timeTxt = null;
-    }
-
-    if (botplayTxt != null)
-    {
-        botplayTxt.destroy();
-        botplayTxt = null;
-    }
-
-    if (camFollow != null)
-    {
-        camFollow.destroy();
-        camFollow = null;
-    }
-
-    unspawnNotes = [];
-    eventNotes = [];
-
     #if LUA_ALLOWED
     for (lua in luaArray)
     {
-        if (lua != null)
-        {
-            lua.call('onDestroy', []);
-            lua.stop();
-        }
+        lua.call('onDestroy', []);
+        lua.stop();
     }
-    luaArray = [];
+    luaArray = null;
     FunkinLua.customFunctions.clear();
     #end
 
@@ -4067,7 +3882,7 @@ override public function destroy()
             script.destroy();
         }
     }
-    hscriptArray = [];
+    hscriptArray = null;
     #end
 
     #if cpp
