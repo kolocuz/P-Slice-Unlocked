@@ -226,7 +226,6 @@
     <haxedef name="HXCPP_GC_BIG_BLOCKS" />
     <haxedef name="HXCPP_GC_SUMMARY" />
 </section>
-        </section>
         <section if="ios">
                 <haxedef name="HXCPP_ARM64" />
         </section>
