@@ -3861,50 +3861,232 @@ public function spawnNoteSplash(note:Note, strum:StrumNote)
 	grpNoteSplashes.add(splash);
 }
 
-override function destroy()
+override public function destroy()
 {
-	if (psychlua.CustomSubstate.instance != null)
-	{
-		closeSubState();
-		resetSubState();
-	}
+    if (notes != null)
+    {
+        notes.forEachAlive(function(note:Note)
+        {
+            note.destroy();
+        });
+        notes.clear();
+        notes = null;
+    }
 
-	#if LUA_ALLOWED
-	for (lua in luaArray)
-	{
-		lua.call('onDestroy', []);
-		lua.stop();
-	}
-	luaArray = null;
-	FunkinLua.customFunctions.clear();
-	#end
+    if (inst != null)
+    {
+        inst.stop();
+        inst.destroy();
+        inst = null;
+    }
 
-	#if HSCRIPT_ALLOWED
-	for (script in hscriptArray)
-		if (script != null)
-		{
-			script.call('onDestroy');
-			script.destroy();
-		}
+    if (vocals != null)
+    {
+        vocals.stop();
+        vocals.destroy();
+        vocals = null;
+    }
 
-	hscriptArray = null;
-	#end
-	stagesFunc(function(stage:BaseStage) stage.destroy());
+    if (opponentVocals != null)
+    {
+        opponentVocals.stop();
+        opponentVocals.destroy();
+        opponentVocals = null;
+    }
 
-	FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyPress);
-	FlxG.stage.removeEventListener(KeyboardEvent.KEY_UP, onKeyRelease);
+    if (boyfriendGroup != null)
+    {
+        boyfriendGroup.forEachAlive(function(spr:FlxSprite)
+        {
+            spr.destroy();
+        });
+        boyfriendGroup.clear();
+        boyfriendGroup = null;
+    }
 
-	FlxG.camera.filters = [];
+    if (dadGroup != null)
+    {
+        dadGroup.forEachAlive(function(spr:FlxSprite)
+        {
+            spr.destroy();
+        });
+        dadGroup.clear();
+        dadGroup = null;
+    }
 
-	#if FLX_PITCH FlxG.sound.music.pitch = 1; #end
-	FlxG.animationTimeScale = 1;
+    if (gfGroup != null)
+    {
+        gfGroup.forEachAlive(function(spr:FlxSprite)
+        {
+            spr.destroy();
+        });
+        gfGroup.clear();
+        gfGroup = null;
+    }
 
-	Note.globalRgbShaders = [];
-	backend.NoteTypesConfig.clearNoteTypesData();
+    if (uiGroup != null)
+    {
+        uiGroup.forEachAlive(function(spr:FlxSprite)
+        {
+            spr.destroy();
+        });
+        uiGroup.clear();
+        uiGroup = null;
+    }
 
-	NoteSplash.configs.clear();
-	instance = null;
-	super.destroy();
+    if (noteGroup != null)
+    {
+        noteGroup.forEachAlive(function(basic:FlxBasic)
+        {
+            basic.destroy();
+        });
+        noteGroup.clear();
+        noteGroup = null;
+    }
+
+    if (strumLineNotes != null)
+    {
+        strumLineNotes.forEachAlive(function(strum:StrumNote)
+        {
+            strum.destroy();
+        });
+        strumLineNotes.clear();
+        strumLineNotes = null;
+    }
+
+    if (playerStrums != null)
+    {
+        playerStrums.forEachAlive(function(strum:StrumNote)
+        {
+            strum.destroy();
+        });
+        playerStrums.clear();
+        playerStrums = null;
+    }
+
+    if (opponentStrums != null)
+    {
+        opponentStrums.forEachAlive(function(strum:StrumNote)
+        {
+            strum.destroy();
+        });
+        opponentStrums.clear();
+        opponentStrums = null;
+    }
+
+    if (grpNoteSplashes != null)
+    {
+        grpNoteSplashes.forEachAlive(function(splash:NoteSplash)
+        {
+            splash.destroy();
+        });
+        grpNoteSplashes.clear();
+        grpNoteSplashes = null;
+    }
+
+    if (grpHoldSplashes != null)
+    {
+        grpHoldSplashes.forEachAlive(function(splash:SustainSplash)
+        {
+            splash.destroy();
+        });
+        grpHoldSplashes.clear();
+        grpHoldSplashes = null;
+    }
+
+    if (healthBar != null)
+    {
+        healthBar.destroy();
+        healthBar = null;
+    }
+
+    if (timeBar != null)
+    {
+        timeBar.destroy();
+        timeBar = null;
+    }
+
+    if (iconP1 != null)
+    {
+        iconP1.destroy();
+        iconP1 = null;
+    }
+
+    if (iconP2 != null)
+    {
+        iconP2.destroy();
+        iconP2 = null;
+    }
+
+    if (scoreTxt != null)
+    {
+        scoreTxt.destroy();
+        scoreTxt = null;
+    }
+
+    if (timeTxt != null)
+    {
+        timeTxt.destroy();
+        timeTxt = null;
+    }
+
+    if (botplayTxt != null)
+    {
+        botplayTxt.destroy();
+        botplayTxt = null;
+    }
+
+    if (infoTxt != null)
+    {
+        infoTxt.destroy();
+        infoTxt = null;
+    }
+
+    if (camFollow != null)
+    {
+        camFollow.destroy();
+        camFollow = null;
+    }
+
+    unspawnNotes = [];
+    eventNotes = [];
+    spamNotes = [];
+
+    #if LUA_ALLOWED
+    for (lua in luaArray)
+    {
+        if (lua != null)
+        {
+            lua.call('onDestroy', []);
+            lua.stop();
+        }
+    }
+    luaArray = [];
+    FunkinLua.customFunctions.clear();
+    #end
+
+    #if HSCRIPT_ALLOWED
+    for (script in hscriptArray)
+    {
+        if (script != null)
+        {
+            script.call('onDestroy');
+            script.destroy();
+        }
+    }
+    hscriptArray = [];
+    #end
+
+    Paths.clearUnusedMemory();
+    Paths.clearStoredMemory();
+
+    FlxG.bitmap.clearUnused();
+
+    #if cpp
+    cpp.vm.Gc.run(true);
+    #end
+
+    super.destroy();
 }
 
 var lastStepHit:Int = -1;
