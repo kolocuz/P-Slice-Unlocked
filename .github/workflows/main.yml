@@ -1,4 +1,4 @@
-name: Main
+name: Build P-Slice Unlocked
 
 on:
   workflow_dispatch:
@@ -32,7 +32,7 @@ on:
 
 jobs:
   BuildDesktopCache:
-    name: Cache Desktop
+    name: Build Desktop Cache
     if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' || inputs.platform == 'linux' }}
     permissions: write-all
     uses: ./.github/workflows/dependencies.yml
@@ -42,7 +42,7 @@ jobs:
       CACHE_NAME: P-Slice-Unlocked-desktop-cache
 
   BuildMobileCache:
-    name: Cache Mobile
+    name: Build Mobile Cache
     if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
     permissions: write-all
     uses: ./.github/workflows/dependencies.yml
