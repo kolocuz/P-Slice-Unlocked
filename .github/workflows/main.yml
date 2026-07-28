@@ -1,4 +1,4 @@
-name: Build P-Slice Unlocked
+name: Main
 
 on:
   workflow_dispatch:
@@ -97,7 +97,7 @@ jobs:
       cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
       cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
       artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-      artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
+      artifactPath: export/release/android/bin/app/build/outputs/apk/release/*.apk
 
   CreateRelease:
     name: Create GitHub Release
