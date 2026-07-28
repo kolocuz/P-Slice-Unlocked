@@ -71,7 +71,7 @@ jobs:
         run: sudo apt install libvlc-dev libvlccore-dev
 
       - name: Compile
-        run: haxelib run lime build ${{ inputs.buildArgs }}
+        run: haxelib run lime build ${{ inputs.buildArgs }} -D HXCPP_VERBOSE
 
       - name: Upload Artifact
         uses: actions/upload-artifact@main
