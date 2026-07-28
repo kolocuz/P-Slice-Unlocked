@@ -1,152 +1,77 @@
-name: Build P-Slice Unlocked
+name: Build
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      platform:
-        description: 'Platform'
-        required: true
-        type: choice
-        default: 'all'
-        options:
-          - 'all'
-          - 'windows'
-          - 'linux'
-          - 'android'
-          - 'desktop'
-
-      version:
-        description: 'Build version'
+      name:
         required: true
         type: string
-        default: '1.0.0'
-
-      build_mode:
-        description: 'Build type'
+      os:
         required: true
-        type: choice
-        default: 'artifact'
-        options:
-          - 'artifact'
-          - 'release'
+        type: string
+      buildArgs:
+        required: true
+        type: string
+      exportPath:
+        required: true
+        type: string
+      artifactName:
+        required: true
+        type: string
+      cacheLibrariesPath:
+        required: true
+        type: string
+      cachePath:
+        required: true
+        type: string
+      artifactPath:
+        required: true
+        type: string
 
 jobs:
-  BuildDesktopCache:
-    name: Cache Desktop
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' || inputs.platform == 'linux' }}
+  build:
+    runs-on: ${{ inputs.os }}
     permissions: write-all
-    uses: ./.github/workflows/dependencies.yml
-    with:
-      os: ubuntu-24.04
-      setupScript: sh ./setup/unix.sh
-      CACHE_NAME: P-Slice-Unlocked-desktop-cache
-
-  BuildMobileCache:
-    name: Cache Mobile
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
-    permissions: write-all
-    uses: ./.github/workflows/dependencies.yml
-    with:
-      os: ubuntu-24.04
-      setupScript: sh ./setup/mobile.sh
-      CACHE_NAME: P-Slice-Unlocked-mobile-cache
-
-  BuildWindows:
-    name: Windows
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
-    needs: BuildDesktopCache
-    permissions: write-all
-    uses: ./.github/workflows/build.yml
-    with:
-      name: Windows
-      os: windows-2022
-      buildArgs: ${{ format('windows{0}', inputs.build_mode == 'release' && ' -final' || '') }}
-      exportPath: windows
-      artifactName: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
-      cacheLibrariesPath: P-Slice-Unlocked-desktop-cache
-      cachePath: ${{ format('PSlice-Unlocked-build-windows-v{0}', inputs.version) }}
-      artifactPath: export\release\windows\bin\*
-
-  BuildLinux:
-    name: Linux
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
-    needs: BuildDesktopCache
-    permissions: write-all
-    uses: ./.github/workflows/build.yml
-    with:
-      name: Linux
-      os: ubuntu-22.04
-      buildArgs: ${{ format('linux{0}', inputs.build_mode == 'release' && ' -final' || '') }}
-      exportPath: linux
-      artifactName: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
-      cacheLibrariesPath: P-Slice-Unlocked-desktop-cache
-      cachePath: ${{ format('PSlice-Unlocked-build-linux-v{0}', inputs.version) }}
-      artifactPath: export/release/linux/bin/*
-
-  BuildAndroid:
-    name: Android
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
-    needs: BuildMobileCache
-    permissions: write-all
-    uses: ./.github/workflows/build.yml
-    with:
-      name: Android
-      os: ubuntu-24.04
-      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
-      exportPath: android
-      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
-      cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
-      artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-      artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
-
-  CreateRelease:
-    name: Create GitHub Release
-    if: ${{ inputs.build_mode == 'release' && always() }}
-    needs: [BuildWindows, BuildLinux, BuildAndroid]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Download Windows artifact
-        if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
-          path: ./artifacts/windows
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Download Linux artifact
-        if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
-        uses: actions/download-artifact@v4
+      - name: Restore Libraries Cache
+        id: cache-libraries
+        uses: actions/cache/restore@v4
         with:
-          name: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
-          path: ./artifacts/linux
+          path: |
+            ~/.haxelib
+            ~/.hxcpp
+          key: ${{ inputs.cacheLibrariesPath }}
 
-      - name: Download Android artifact
-        if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
-        uses: actions/download-artifact@v4
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
         with:
-          name: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-          path: ./artifacts/android
+          haxe-version: 4.3.6
 
-      - name: Create ZIP archives
+      - name: Restore Build Cache
+        id: cache-build
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            export/release/${{ inputs.exportPath }}
+          key: ${{ inputs.cachePath }}
+
+      - name: Build ${{ inputs.name }}
         run: |
-          cd artifacts
-          for dir in */; do
-            if [ -d "$dir" ]; then
-              zip -r "../PSlice-Unlocked-v${{ inputs.version }}-${dir%/}.zip" "$dir"
-            fi
-          done
-          cd ..
-          ls -la *.zip
+          haxelib run lime build ${{ inputs.buildArgs }}
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Remove Firebase from build.gradle
+        if: ${{ inputs.exportPath == 'android' }}
+        run: |
+          find . -name "build.gradle" -exec sed -i '/firebaseCrashlytics()/d' {} \;
+          find . -name "build.gradle" -exec sed -i '/google-services/d' {} \;
+          find . -name "build.gradle" -exec sed -i '/com.google.firebase/d' {} \;
+
+      - name: Upload ${{ inputs.name }} Artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: v${{ inputs.version }}
-          name: P-Slice Unlocked v${{ inputs.version }}
-          body: ${{ inputs.version }}
-          draft: false
-          prerelease: false
-          files: |
-            *.zip
-            artifacts/android/*.apk
+          name: ${{ inputs.artifactName }}
+          path: ${{ inputs.artifactPath }}
+          retention-days: 7
