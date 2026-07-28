@@ -1,119 +1,152 @@
-on:
-  workflow_call:
-    inputs:
-      name:
-        required: true
-        type: string
-      os:
-        required: true
-        type: string
-      buildArgs:
-        required: true
-        type: string
-      artifactName:
-        required: true
-        type: string
-      artifactPath:
-        required: true
-        type: string
-      cachePath:
-        required: true
-        type: string
-      cacheLibrariesPath:
-        required: true
-        type: string
-      exportPath:
-        required: true
-        type: string
+name: Build P-Slice Unlocked
 
-env:
-  HAXE_VERSION: 4.3.6
-  PROJECT_NAME: PSliceEngine
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - 'all'
+          - 'windows'
+          - 'linux'
+          - 'android'
+          - 'desktop'
+
+      version:
+        description: 'Build version'
+        required: true
+        type: string
+        default: '1.0.0'
+
+      build_mode:
+        description: 'Build type'
+        required: true
+        type: choice
+        default: 'artifact'
+        options:
+          - 'artifact'
+          - 'release'
 
 jobs:
-  build:
-    name: ${{ inputs.name }}
-    runs-on: ${{ inputs.os }}
+  BuildDesktopCache:
+    name: Cache Desktop
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' || inputs.platform == 'linux' }}
+    permissions: write-all
+    uses: ./.github/workflows/dependencies.yml
+    with:
+      os: ubuntu-24.04
+      setupScript: sh ./setup/unix.sh
+      CACHE_NAME: P-Slice-Unlocked-desktop-cache
+
+  BuildMobileCache:
+    name: Cache Mobile
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+    permissions: write-all
+    uses: ./.github/workflows/dependencies.yml
+    with:
+      os: ubuntu-24.04
+      setupScript: sh ./setup/mobile.sh
+      CACHE_NAME: P-Slice-Unlocked-mobile-cache
+
+  BuildWindows:
+    name: Windows
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
+    needs: BuildDesktopCache
+    permissions: write-all
+    uses: ./.github/workflows/build.yml
+    with:
+      name: Windows
+      os: windows-2022
+      buildArgs: ${{ format('windows{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      exportPath: windows
+      artifactName: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
+      cacheLibrariesPath: P-Slice-Unlocked-desktop-cache
+      cachePath: ${{ format('PSlice-Unlocked-build-windows-v{0}', inputs.version) }}
+      artifactPath: export\release\windows\bin\*
+
+  BuildLinux:
+    name: Linux
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
+    needs: BuildDesktopCache
+    permissions: write-all
+    uses: ./.github/workflows/build.yml
+    with:
+      name: Linux
+      os: ubuntu-22.04
+      buildArgs: ${{ format('linux{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      exportPath: linux
+      artifactName: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
+      cacheLibrariesPath: P-Slice-Unlocked-desktop-cache
+      cachePath: ${{ format('PSlice-Unlocked-build-linux-v{0}', inputs.version) }}
+      artifactPath: export/release/linux/bin/*
+
+  BuildAndroid:
+    name: Android
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+    needs: BuildMobileCache
+    permissions: write-all
+    uses: ./.github/workflows/build.yml
+    with:
+      name: Android
+      os: ubuntu-24.04
+      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      exportPath: android
+      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
+      cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
+      artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
+      artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
+
+  CreateRelease:
+    name: Create GitHub Release
+    if: ${{ inputs.build_mode == 'release' && always() }}
+    needs: [BuildWindows, BuildLinux, BuildAndroid]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@main
-
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@master
+      - name: Download Windows artifact
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
+        uses: actions/download-artifact@v4
         with:
-          haxe-version: ${{ env.HAXE_VERSION }}
+          name: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
+          path: ./artifacts/windows
 
-      - name: Restore Libraries
-        id: load-lib-cache
-        uses: actions/cache@v3
+      - name: Download Linux artifact
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
+        uses: actions/download-artifact@v4
         with:
-          key: ${{ inputs.cacheLibrariesPath }}
-          fail-on-cache-miss: true
-          enableCrossOsArchive: true
-          path: |
-            .haxelib/
-          restore-keys: |
-            ${{ inputs.cacheLibrariesPath }}
+          name: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
+          path: ./artifacts/linux
 
-      - name: Restore build cache
-        id: load-cache
-        uses: actions/cache@v3
+      - name: Download Android artifact
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+        uses: actions/download-artifact@v4
         with:
-          key: ${{ inputs.cachePath }}
-          path: |
-            export/release/${{ inputs.exportPath }}/haxe/
-            export/release/${{ inputs.exportPath }}/obj/
-          restore-keys: |
-            cache-build-${{ inputs.exportPath }}
+          name: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
+          path: ./artifacts/android
 
-      - name: Install libVLC
-        if: inputs.exportPath == 'linux'
-        run: sudo apt install libvlc-dev libvlccore-dev
-
-      - name: Configure Android
-        if: inputs.exportPath == 'android'
+      - name: Create ZIP archives
         run: |
-          haxelib run lime config ANDROID_SDK $ANDROID_HOME
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
-          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
-          haxelib run lime config ANDROID_SETUP true
+          cd artifacts
+          for dir in */; do
+            if [ -d "$dir" ]; then
+              zip -r "../PSlice-Unlocked-v${{ inputs.version }}-${dir%/}.zip" "$dir"
+            fi
+          done
+          cd ..
+          ls -la *.zip
 
-      - name: Compile
-        run: haxelib run lime build ${{ inputs.buildArgs }}
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@main
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: ${{ inputs.artifactName }}
-          path: ${{ inputs.artifactPath }}
-          if-no-files-found: error
-
-      - name: Clear old cache
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const caches = await github.rest.actions.getActionsCacheList({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            })
-            for (const cache of caches.data.actions_caches) {
-              if (cache.key == "${{ inputs.cachePath }}") {
-                console.log('Clearing ' + cache.key + '...')
-                await github.rest.actions.deleteActionsCacheById({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  cache_id: cache.id,
-                })
-                console.log("Cache cleared.")
-              }
-            }
-
-      - name: Upload new cache
-        uses: actions/cache@v3
-        with:
-          key: ${{ inputs.cachePath }}
-          path: |
-            export/release/${{ inputs.exportPath }}/haxe/
-            export/release/${{ inputs.exportPath }}/obj/
-          restore-keys: |
-            ${{ inputs.cachePath }}
+          tag_name: v${{ inputs.version }}
+          name: P-Slice Unlocked v${{ inputs.version }}
+          body: ${{ inputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            *.zip
+            artifacts/android/*.apk
