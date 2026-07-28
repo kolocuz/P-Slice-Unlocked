@@ -88,16 +88,54 @@ jobs:
     if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
     needs: BuildMobileCache
     permissions: write-all
-    uses: ./.github/workflows/build.yml
-    with:
-      name: Android
-      os: ubuntu-24.04
-      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
-      exportPath: android
-      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
-      cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
-      artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-      artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore Haxe libraries cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            ~/.haxelib
+            ~/.hxcpp
+          key: ${{ runner.os }}-haxe-${{ hashFiles('setup/mobile.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-haxe-
+
+      - name: Install Haxe dependencies
+        run: |
+          chmod +x setup/mobile.sh
+          sh ./setup/mobile.sh
+
+      - name: Save Haxe libraries cache
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            ~/.haxelib
+            ~/.hxcpp
+          key: ${{ runner.os }}-haxe-${{ hashFiles('setup/mobile.sh') }}
+
+      - name: Build Android
+        run: |
+          lime build android ${{ inputs.build_mode == 'release' && '-final' || '' }}
+
+      - name: 🔥 NUKE FIREBASE from generated build.gradle
+        run: |
+          echo "🔥 Looking for build.gradle files..."
+          find . -name "build.gradle" -type f -print0 | while IFS= read -r -d '' file; do
+            echo "Processing $file"
+            sed -i '/firebaseCrashlytics()/d' "$file"
+            sed -i '/google-services/d' "$file"
+            sed -i '/com.google.firebase/d' "$file"
+          done
+          echo "🔥 Firebase removed from all build.gradle files!"
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+          retention-days: 7
 
   CreateRelease:
     name: Create GitHub Release
