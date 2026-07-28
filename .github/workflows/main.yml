@@ -12,8 +12,6 @@ on:
           - 'all'
           - 'windows'
           - 'linux'
-          - 'android'
-          - 'desktop'
 
       version:
         description: 'Build version'
@@ -40,19 +38,9 @@ jobs:
       setupScript: sh ./setup/unix.sh
       CACHE_NAME: P-Slice-Unlocked-desktop-cache
 
-  BuildMobileCache:
-    name: Build Caches
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
-    permissions: write-all
-    uses: ./.github/workflows/dependencies.yml
-    with:
-      os: ubuntu-24.04
-      setupScript: sh ./setup/mobile.sh
-      CACHE_NAME: P-Slice-Unlocked-mobile-cache
-
   BuildWindows:
     name: Windows
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'windows' }}
     needs: BuildDesktopCache
     permissions: write-all
     uses: ./.github/workflows/build.yml
@@ -68,7 +56,7 @@ jobs:
 
   BuildLinux:
     name: Linux
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'linux' }}
     needs: BuildDesktopCache
     permissions: write-all
     uses: ./.github/workflows/build.yml
@@ -82,50 +70,27 @@ jobs:
       cachePath: ${{ format('PSlice-Unlocked-build-linux-v{0}', inputs.version) }}
       artifactPath: export/release/linux/bin/*
 
-  BuildAndroid:
-    name: Android
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
-    needs: BuildMobileCache
-    permissions: write-all
-    uses: ./.github/workflows/build.yml
-    with:
-      name: Android
-      os: ubuntu-24.04
-      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
-      exportPath: android
-      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
-      cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
-      artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-      artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
-
   CreateRelease:
     name: Create GitHub Release
     if: ${{ inputs.build_mode == 'release' && always() }}
-    needs: [BuildWindows, BuildLinux, BuildAndroid]
+    needs: [BuildWindows, BuildLinux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Download Windows artifact
-        if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'windows' }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
           path: ./artifacts/windows
 
       - name: Download Linux artifact
-        if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'linux' }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
           path: ./artifacts/linux
-
-      - name: Download Android artifact
-        if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-          path: ./artifacts/android
 
       - name: Create ZIP archives
         run: |
@@ -148,4 +113,3 @@ jobs:
           prerelease: false
           files: |
             *.zip
-            artifacts/android/*.apk
