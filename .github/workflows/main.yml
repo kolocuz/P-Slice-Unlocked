@@ -88,52 +88,16 @@ jobs:
     if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
     needs: BuildMobileCache
     permissions: write-all
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Haxe
-        uses: ./.github/actions/setup-haxe
-        with:
-          haxe-version: 4.3.6
-
-      - name: Restore mobile cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.haxelib
-            ~/.hxcpp
-          key: ${{ runner.os }}-mobile-${{ hashFiles('setup/mobile.sh') }}
-
-      - name: Install dependencies
-        run: sh ./setup/mobile.sh
-
-      - name: Save mobile cache
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.haxelib
-            ~/.hxcpp
-          key: ${{ runner.os }}-mobile-${{ hashFiles('setup/mobile.sh') }}
-
-      - name: Build Android
-        run: |
-          lime build android ${{ inputs.build_mode == 'release' && '-final' || '' }}
-
-      - name: Remove Firebase from build.gradle
-        run: |
-          find . -name "build.gradle" -exec sed -i '/firebaseCrashlytics()/d' {} \;
-          find . -name "build.gradle" -exec sed -i '/google-services/d' {} \;
-          find . -name "build.gradle" -exec sed -i '/com.google.firebase/d' {} \;
-          echo "🔥 Firebase removed!"
-
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
-          retention-days: 7
+    uses: ./.github/workflows/build.yml
+    with:
+      name: Android
+      os: ubuntu-24.04
+      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      exportPath: android
+      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
+      cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
+      artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
+      artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
 
   CreateRelease:
     name: Create GitHub Release
@@ -143,21 +107,21 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download Windows
+      - name: Download Windows artifact
         if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Windows', inputs.version) }}
           path: ./artifacts/windows
 
-      - name: Download Linux
+      - name: Download Linux artifact
         if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'linux' }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
           path: ./artifacts/linux
 
-      - name: Download Android
+      - name: Download Android artifact
         if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
         uses: actions/download-artifact@v4
         with:
