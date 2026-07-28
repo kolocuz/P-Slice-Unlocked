@@ -99,9 +99,6 @@ where `<platform>` gets replaced with `windows`, `linux`, or `mac`. You can also
 
 ### Branches
 - `master` — Main branch. Contains the most stable version.
-- `master-dev` — Development branch, may contain less stable builds.
-- `pe-0.6.3` — Version built on Psych 0.6.3 (may have bugs).
-- `pe-0.6.3-dev` — Development version of the Psych 0.6.3 branch.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
