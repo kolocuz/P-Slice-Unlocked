@@ -4036,12 +4036,6 @@ override public function destroy()
         botplayTxt = null;
     }
 
-    if (infoTxt != null)
-    {
-        infoTxt.destroy();
-        infoTxt = null;
-    }
-
     if (camFollow != null)
     {
         camFollow.destroy();
@@ -4050,7 +4044,6 @@ override public function destroy()
 
     unspawnNotes = [];
     eventNotes = [];
-    spamNotes = [];
 
     #if LUA_ALLOWED
     for (lua in luaArray)
@@ -4076,11 +4069,6 @@ override public function destroy()
     }
     hscriptArray = [];
     #end
-
-    Paths.clearUnusedMemory();
-    Paths.clearStoredMemory();
-
-    FlxG.bitmap.clearUnused();
 
     #if cpp
     cpp.vm.Gc.run(true);
