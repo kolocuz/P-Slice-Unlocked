@@ -3863,13 +3863,22 @@ public function spawnNoteSplash(note:Note, strum:StrumNote)
 
 override public function destroy()
 {
+    if (psychlua.CustomSubstate.instance != null)
+    {
+        closeSubState();
+        resetSubState();
+    }
+
     #if LUA_ALLOWED
     for (lua in luaArray)
     {
-        lua.call('onDestroy', []);
-        lua.stop();
+        if (lua != null)
+        {
+            lua.call('onDestroy', []);
+            lua.stop();
+        }
     }
-    luaArray = null;
+    luaArray = [];
     FunkinLua.customFunctions.clear();
     #end
 
@@ -3882,8 +3891,46 @@ override public function destroy()
             script.destroy();
         }
     }
-    hscriptArray = null;
+    hscriptArray = [];
     #end
+
+    stagesFunc(function(stage:BaseStage) stage.destroy());
+
+    FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyPress);
+    FlxG.stage.removeEventListener(KeyboardEvent.KEY_UP, onKeyRelease);
+
+    if (inst != null)
+    {
+        inst.stop();
+        inst.destroy();
+        inst = null;
+    }
+
+    if (vocals != null)
+    {
+        vocals.stop();
+        vocals.destroy();
+        vocals = null;
+    }
+
+    if (opponentVocals != null)
+    {
+        opponentVocals.stop();
+        opponentVocals.destroy();
+        opponentVocals = null;
+    }
+
+    FlxG.camera.filters = [];
+
+    #if FLX_PITCH
+    FlxG.sound.music.pitch = 1;
+    #end
+    FlxG.animationTimeScale = 1;
+
+    Note.globalRgbShaders = [];
+    backend.NoteTypesConfig.clearNoteTypesData();
+    NoteSplash.configs.clear();
+    instance = null;
 
     #if cpp
     cpp.vm.Gc.run(true);
