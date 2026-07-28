@@ -1,4 +1,4 @@
-name: Build P-Slice Unlocked
+name: Build the game
 
 on:
   workflow_dispatch:
@@ -32,8 +32,7 @@ on:
 
 jobs:
   BuildDesktopCache:
-    name: Build Desktop Cache
-    if: ${{ inputs.platform == 'all' || inputs.platform == 'desktop' || inputs.platform == 'windows' || inputs.platform == 'linux' }}
+    name: Build Caches
     permissions: write-all
     uses: ./.github/workflows/dependencies.yml
     with:
@@ -42,7 +41,7 @@ jobs:
       CACHE_NAME: P-Slice-Unlocked-desktop-cache
 
   BuildMobileCache:
-    name: Build Mobile Cache
+    name: Build Caches
     if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
     permissions: write-all
     uses: ./.github/workflows/dependencies.yml
@@ -97,7 +96,7 @@ jobs:
       cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
       cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
       artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-      artifactPath: export/release/android/bin/app/build/outputs/apk/release/*.apk
+      artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
 
   CreateRelease:
     name: Create GitHub Release
