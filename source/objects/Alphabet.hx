@@ -20,7 +20,7 @@ class Alphabet extends FlxSpriteGroup
 	public var letters:Array<Dynamic> = [];
 
 	public var isMenuItem:Bool = false;
-	public var targetY:Int = 0;
+	public var targetY:Float = 0;  // <-- Float, чтобы не ломать другие файлы
 	public var changeX:Bool = true;
 	public var changeY:Bool = true;
 
