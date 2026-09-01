@@ -31,7 +31,7 @@ on:
 
 jobs:
   BuildDesktopCache:
-    name: Build Caches
+    name: Build Desktop Caches
     permissions: write-all
     uses: ./.github/workflows/dependencies.yml
     with:
@@ -45,8 +45,8 @@ jobs:
     uses: ./.github/workflows/dependencies.yml
     with:
       os: ubuntu-24.04
-      setupScript: sh ./setup/unix.sh
-      CACHE_NAME: P-Slice-Unlocked-mobile-cache
+      setupScript: sh ./setup/mobile.sh
+      CACHE_NAME: P-Slice-Unlocked-mobile-cache-v2  # <-- НОВОЕ ИМЯ
 
   BuildWindows:
     name: Windows
@@ -92,7 +92,7 @@ jobs:
       buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
       exportPath: android
       artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
+      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache-v2  # <-- НОВОЕ ИМЯ
       cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
       artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
 
