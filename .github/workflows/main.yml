@@ -46,7 +46,7 @@ jobs:
     with:
       os: ubuntu-24.04
       setupScript: sh ./setup/mobile.sh
-      CACHE_NAME: P-Slice-Unlocked-mobile-cache-v2  # <-- НОВОЕ ИМЯ
+      CACHE_NAME: P-Slice-Unlocked-mobile-cache-v2
 
   BuildWindows:
     name: Windows
