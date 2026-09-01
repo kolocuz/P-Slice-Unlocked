@@ -90,10 +90,8 @@ jobs:
         if: inputs.exportPath == 'android'
         run: |
           APK_PATH="export/release/android/bin/app/build/outputs/apk/release/PSliceEngine-release.apk"
-          # Проверяем, существует ли APK
           if [ -f "$APK_PATH" ]; then
             echo "Found APK at $APK_PATH"
-            # Подписываем существующим key.keystore из репозитория
             $ANDROID_HOME/build-tools/35.0.1/apksigner sign --ks key.keystore --ks-key-alias pslice --ks-pass pass:pslice --key-pass pass:pslice "$APK_PATH"
             echo "APK signed successfully!"
           else
