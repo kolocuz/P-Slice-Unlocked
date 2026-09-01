@@ -78,27 +78,39 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
 
-
       - name: Compile
         run: haxelib run lime build ${{ inputs.buildArgs }}
+
+      # ==========================================
+      #  НОВЫЙ ШАГ — удаляет Firebase из Gradle
+      #  Выполняется ПОСЛЕ компиляции, но ДО подписи
+      # ==========================================
+      - name: Remove Firebase from Gradle files
+        if: inputs.exportPath == 'android'
+        run: |
+          echo "🔍 Searching for Firebase in Gradle files..."
+          find export/release/android/bin/ -name "*.gradle" -exec sed -i '/firebaseCrashlytics/d' {} \;
+          find export/release/android/bin/ -name "*.gradle" -exec sed -i '/google-services/d' {} \;
+          find export/release/android/bin/ -name "*.gradle" -exec sed -i '/Firebase/d' {} \;
+          echo "✅ Firebase removed from all Gradle files."
 
       - name: Sign APK with the existing keystore
         if: inputs.exportPath == 'android'
         run: |
           APK_PATH="export/release/android/bin/app/build/outputs/apk/release/PSliceEngine-release.apk"
           if [ -f "$APK_PATH" ]; then
-            echo "Found APK at $APK_PATH"
+            echo "✅ Found APK at $APK_PATH"
             $ANDROID_HOME/build-tools/35.0.1/apksigner sign --ks key.keystore --ks-key-alias pslice --ks-pass pass:pslice --key-pass pass:pslice "$APK_PATH"
-            echo "APK signed successfully!"
+            echo "✅ APK signed successfully!"
           else
-            echo "APK not found at $APK_PATH, trying alternative path..."
+            echo "⚠️ APK not found at $APK_PATH, trying alternative path..."
             APK_PATH_ALT="export/release/android/bin/PSliceEngine-release.apk"
             if [ -f "$APK_PATH_ALT" ]; then
-              echo "Found APK at $APK_PATH_ALT"
+              echo "✅ Found APK at $APK_PATH_ALT"
               $ANDROID_HOME/build-tools/35.0.1/apksigner sign --ks key.keystore --ks-key-alias pslice --ks-pass pass:pslice --key-pass pass:pslice "$APK_PATH_ALT"
-              echo "APK signed successfully!"
+              echo "✅ APK signed successfully!"
             else
-              echo "ERROR: APK not found in any expected location!"
+              echo "❌ ERROR: APK not found in any expected location!"
               exit 1
             fi
           fi
@@ -120,13 +132,13 @@ jobs:
             })
             for (const cache of caches.data.actions_caches) {
               if (cache.key == "${{ inputs.cachePath }}") {
-                console.log('Clearing ' + cache.key + '...')
+                console.log('🧹 Clearing ' + cache.key + '...')
                 await github.rest.actions.deleteActionsCacheById({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   cache_id: cache.id,
                 })
-                console.log("Cache cleared.")
+                console.log("✅ Cache cleared.")
               }
             }
 
