@@ -78,12 +78,6 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
 
-      - name: Remove Firebase from Gradle
-      if: inputs.exportPath == 'android'
-      run: |
-        sed -i '/firebaseCrashlytics/d' export/release/android/bin/app/build.gradle
-        sed -i '/google-services/d' export/release/android/bin/app/build.gradle
-
 
       - name: Compile
         run: haxelib run lime build ${{ inputs.buildArgs }}
