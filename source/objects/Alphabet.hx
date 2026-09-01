@@ -1,8 +1,9 @@
 package objects;
 
-import backend.AssetLoader;
 import flixel.graphics.frames.FlxAtlasFrames;
 import haxe.Json;
+import sys.io.File;
+import sys.FileSystem;
 
 enum Alignment
 {
@@ -361,7 +362,7 @@ class AlphaCharacter extends FlxSprite
 			return cachedAlphabetFrames;
 
 		var atlasPath:String = Paths.getPath('images/$request.xml', TEXT);
-		if (!AssetLoader.exists(atlasPath, TEXT))
+		if (!FileSystem.exists(atlasPath))
 			request = 'alphabet';
 
 		cachedAlphabetRequest = request;
@@ -372,14 +373,14 @@ class AlphaCharacter extends FlxSprite
 	public static function loadAlphabetData(request:String = 'alphabet')
 	{
 		var path:String = Paths.getPath('images/$request.json');
-		if (!AssetLoader.exists(path, TEXT))
+		if (!FileSystem.exists(path))
 			path = Paths.getPath('images/alphabet.json');
 
 		allLetters = new Map<String, Null<Letter>>();
 		try
 		{
 			clearAlphabetCache();
-			var rawData:String = AssetLoader.loadText(path);
+			var rawData:String = File.getContent(path);
 			if(rawData == null || rawData.length == 0)
 				throw 'Missing alphabet data: $path';
 			var data:Dynamic = Json.parse(rawData);
@@ -488,7 +489,7 @@ class AlphaCharacter extends FlxSprite
 
 	public static function isTypeAlphabet(c:String)
 	{
-		var ascii = StringTools.fastCodeAt(c, 0);
+		var ascii = c.charCodeAt(0);
 		return (ascii >= 65 && ascii <= 90)
 			|| (ascii >= 97 && ascii <= 122)
 			|| (ascii >= 192 && ascii <= 214)
