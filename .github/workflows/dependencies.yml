@@ -10,7 +10,7 @@ on:
       setupScript:
         required: true
         type: string
-# PE10-Desktop_Cache
+
 env:
   HAXE_VERSION: 4.3.6
   PROJECT_NAME: PSliceEngine
@@ -24,13 +24,12 @@ jobs:
         id: load-lib-cache
         uses: actions/cache@v3
         with:
-          # not caching the bin folder to prevent asset duplication and stuff like that
-          key:  ${{ inputs.CACHE_NAME }}
+          key: ${{ inputs.CACHE_NAME }}
           enableCrossOsArchive: true
           path: |
             .haxelib/
           restore-keys: |
-             ${{ inputs.CACHE_NAME }}
+            ${{ inputs.CACHE_NAME }}
 
       - name: Checkout
         if: steps.load-lib-cache.outputs.cache-hit != 'true'
@@ -44,16 +43,12 @@ jobs:
 
       - name: Setup haxelib
         if: steps.load-lib-cache.outputs.cache-hit != 'true'
-        run: haxelib newrepo    
+        run: haxelib newrepo
 
       - name: Install Libraries
         if: steps.load-lib-cache.outputs.cache-hit != 'true'
         run: ${{ inputs.setupScript }}
 
-      - name: Install hxvlc for windows
-        run: haxelib install hxvlc 2.2.2 --quiet
-        if: inputs.os == 'ubuntu-24.04' && steps.load-lib-cache.outputs.cache-hit != 'true'
-   
       - name: Uploading new cache
         if: steps.load-lib-cache.outputs.cache-hit != 'true'
         uses: actions/cache@v3
