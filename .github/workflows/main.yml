@@ -1,6 +1,8 @@
 name: Build the game
 
 on:
+  push:
+    branches: [master]
   workflow_dispatch:
     inputs:
       platform:
@@ -12,13 +14,12 @@ on:
           - 'all'
           - 'windows'
           - 'linux'
-
+          - 'android'
       version:
         description: 'Build version'
         required: true
         type: string
         default: '1.0.0'
-
       build_mode:
         description: 'Build type'
         required: true
@@ -37,6 +38,15 @@ jobs:
       os: ubuntu-24.04
       setupScript: sh ./setup/unix.sh
       CACHE_NAME: P-Slice-Unlocked-desktop-cache
+
+  BuildMobileCache:
+    name: Build Mobile Caches
+    permissions: write-all
+    uses: ./.github/workflows/dependencies.yml
+    with:
+      os: ubuntu-24.04
+      setupScript: sh ./setup/unix.sh
+      CACHE_NAME: P-Slice-Unlocked-mobile-cache
 
   BuildWindows:
     name: Windows
@@ -70,10 +80,26 @@ jobs:
       cachePath: ${{ format('PSlice-Unlocked-build-linux-v{0}', inputs.version) }}
       artifactPath: export/release/linux/bin/*
 
+  BuildAndroid:
+    name: Android
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+    needs: BuildMobileCache
+    permissions: write-all
+    uses: ./.github/workflows/build.yml
+    with:
+      name: Android
+      os: ubuntu-24.04
+      buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
+      exportPath: android
+      artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
+      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache
+      cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
+      artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
+
   CreateRelease:
     name: Create GitHub Release
     if: ${{ inputs.build_mode == 'release' && always() }}
-    needs: [BuildWindows, BuildLinux]
+    needs: [BuildWindows, BuildLinux, BuildAndroid]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -91,6 +117,13 @@ jobs:
         with:
           name: ${{ format('PSlice-Unlocked-v{0}-Linux', inputs.version) }}
           path: ./artifacts/linux
+
+      - name: Download Android artifact
+        if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
+          path: ./artifacts/android
 
       - name: Create ZIP archives
         run: |
