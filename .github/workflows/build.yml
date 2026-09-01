@@ -43,10 +43,6 @@ jobs:
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
-      - name: Set XCode app (iOS only)
-        if: inputs.os == 'macos-15'
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
-
       - name: Restore Libraries for compilation
         id: load-lib-cache
         uses: actions/cache@v3
@@ -81,7 +77,6 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
-          # Firebase удалён — никаких google-services.json не создаём
 
       - name: Compile
         run: haxelib run lime build ${{ inputs.buildArgs }}
