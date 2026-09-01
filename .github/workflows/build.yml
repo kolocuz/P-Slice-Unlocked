@@ -43,6 +43,10 @@ jobs:
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
+      - name: Set XCode app (iOS only)
+        if: inputs.os == 'macos-15'
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+
       - name: Restore Libraries for compilation
         id: load-lib-cache
         uses: actions/cache@v3
@@ -66,12 +70,44 @@ jobs:
           restore-keys: |
             cache-build-${{ inputs.exportPath }}
 
-      - name: Install libVLC
+      - name: Install libVLC (Linux only)
         if: inputs.exportPath == 'linux'
         run: sudo apt install libvlc-dev libvlccore-dev
 
+      - name: Configure Android
+        if: inputs.exportPath == 'android'
+        run: |
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
+          haxelib run lime config ANDROID_SETUP true
+          # Firebase удалён — никаких google-services.json не создаём
+
       - name: Compile
-        run: haxelib run lime build ${{ inputs.buildArgs }} -D HXCPP_VERBOSE
+        run: haxelib run lime build ${{ inputs.buildArgs }}
+
+      - name: Sign APK with the existing keystore
+        if: inputs.exportPath == 'android'
+        run: |
+          APK_PATH="export/release/android/bin/app/build/outputs/apk/release/PSliceEngine-release.apk"
+          # Проверяем, существует ли APK
+          if [ -f "$APK_PATH" ]; then
+            echo "Found APK at $APK_PATH"
+            # Подписываем существующим key.keystore из репозитория
+            $ANDROID_HOME/build-tools/35.0.1/apksigner sign --ks key.keystore --ks-key-alias pslice --ks-pass pass:pslice --key-pass pass:pslice "$APK_PATH"
+            echo "APK signed successfully!"
+          else
+            echo "APK not found at $APK_PATH, trying alternative path..."
+            APK_PATH_ALT="export/release/android/bin/PSliceEngine-release.apk"
+            if [ -f "$APK_PATH_ALT" ]; then
+              echo "Found APK at $APK_PATH_ALT"
+              $ANDROID_HOME/build-tools/35.0.1/apksigner sign --ks key.keystore --ks-key-alias pslice --ks-pass pass:pslice --key-pass pass:pslice "$APK_PATH_ALT"
+              echo "APK signed successfully!"
+            else
+              echo "ERROR: APK not found in any expected location!"
+              exit 1
+            fi
+          fi
 
       - name: Upload Artifact
         uses: actions/upload-artifact@main
