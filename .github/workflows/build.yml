@@ -81,7 +81,12 @@ jobs:
       - name: Compile
         run: haxelib run lime build ${{ inputs.buildArgs }}
 
-
+      - name: Upload build.gradle even on failure
+        if: always() && inputs.exportPath == 'android'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-generated
+          path: export/release/android/bin/app/build.gradle
 
       - name: Sign APK with the existing keystore
         if: inputs.exportPath == 'android'
