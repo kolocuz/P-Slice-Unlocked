@@ -1,56 +1,125 @@
 apply plugin: 'com.android.application'
 
+System.setProperty('java.awt.headless','false')
+
 android {
+    namespace "com.mikolka9144.pslice"
     compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
     buildToolsVersion project.ANDROID_BUILD_TOOLS_VERSION
-    ::if (ANDROID_GRADLE_PLUGIN>="4.0")::ndkPath '::ANDROID_NDK_ROOT_ESCAPED::'::end::
-    ::if (ANDROID_NDK_VERSION)::ndkVersion '::ANDROID_NDK_VERSION::'::end::
+    ndkPath '/usr/local/lib/android/sdk/ndk/27.3.13750724'
 
     defaultConfig {
-        applicationId project.APP_PACKAGE
-        minSdkVersion Integer.parseInt(project.ANDROID_MIN_SDK_VERSION)
-        targetSdkVersion Integer.parseInt(project.ANDROID_TARGET_SDK_VERSION)
-        versionCode Integer.parseInt(project.APP_VERSION_CODE)
-        versionName project.APP_VERSION_NAME
-
-        ::if (ANDROID_GRADLE_PLUGIN>="4.0")::
-        multiDexEnabled true
-        ::end::
+        applicationId "com.mikolka9144.pslice"
+        minSdkVersion Integer.parseInt(project.ANDROID_BUILD_MIN_SDK_VERSION)
+        targetSdkVersion Integer.parseInt(project.ANDROID_BUILD_TARGET_SDK_VERSION)
+        versionCode Integer.parseInt(project.VERSION_CODE)
+        versionName project.VERSION_NAME
     }
 
     signingConfigs {
+        if (project.KEY_STORE_PASSWORD == 'null') {
+            def keyStoreFile = project.KEY_STORE.split('/')
+            keyStoreFile = keyStoreFile[keyStoreFile.length - 1]
+            project.KEY_STORE_PASSWORD = getPassword('\nPlease enter key password for ' + keyStoreFile + ':');
+        }
+
+        if (project.KEY_STORE_ALIAS_PASSWORD == 'null') {
+            project.KEY_STORE_ALIAS_PASSWORD = getPassword("\nPlease enter key alias password for alias " + project.KEY_STORE_ALIAS + ":")
+        }
+
         release {
-            storeFile file('../../../../' + project.KEYSTORE_PATH)
-            storePassword project.KEYSTORE_PASSWORD
-            keyAlias project.KEY_ALIAS
-            keyPassword project.KEY_ALIAS_PASSWORD
+            storeFile file(project.KEY_STORE)
+            storePassword project.KEY_STORE_PASSWORD
+            keyAlias project.KEY_STORE_ALIAS
+            keyPassword project.KEY_STORE_ALIAS_PASSWORD
         }
     }
 
     buildTypes {
         release {
+            minifyEnabled false
             signingConfig signingConfigs.release
-            // firebaseCrashlytics()
+            // firebaseCrashlytics {
+            //     nativeSymbolUploadEnabled true
+            //     unstrippedNativeLibsDir = file("../unstrippedLibs")
+            // }
         }
         debug {
             debuggable true
         }
     }
 
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-
-    lint {
-        disable 'GradleCompatible'
+    android.applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            if (outputFileName != null && outputFileName.endsWith('.apk')) {
+                outputFileName =  "PSliceEngine-" + variant.buildType.name + ".apk"
+            }
+        }
     }
 }
 
 dependencies {
+    implementation "androidx.core:core:1.15.0"
+    implementation "androidx.documentfile:documentfile:1.1.0"
+
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core:1.12.0'
-    // implementation 'com.google.firebase:firebase-crashlytics:18.6.0'
-    // implementation 'com.google.firebase:firebase-analytics:21.5.0'
+    implementation project(':deps:extension-api')
+    implementation project(':deps:extension-haptics')
+    implementation project(':deps:extension-androidtools')
+}
+
+def getPassword(message) {
+    def password = '';
+    if (System.console() == null) {
+        new groovy.swing.SwingBuilder().edt {
+            dialog(
+                title: 'Enter password',
+                alwaysOnTop: true,
+                size: [350, 150],
+                resizable: false,
+                locationRelativeTo: null,
+                pack: true,
+                modal: true,
+                show: true
+            ) {
+                lookAndFeel('system')
+
+                panel(border: new javax.swing.border.EmptyBorder(10, 10, 10, 10)) {
+                    gridBagLayout()
+                    def gbc = new java.awt.GridBagConstraints();
+
+                    gbc.gridx = 0
+                    gbc.gridy = 0
+                    gbc.fill = java.awt.GridBagConstraints.HORIZONTAL
+                    gbc.insets = [0, 0, 10, 0]
+                    label(
+                        text: '<html>' +
+                        '<body style="width: 350px">' +
+                        message +
+                        '</body>' +
+                        '</html>',
+                        constraints: gbc)
+
+                    gbc.gridy = 1
+                    input = passwordField(constraints: gbc)
+
+                    gbc.gridy = 2
+                    gbc.fill = java.awt.GridBagConstraints.NONE
+                    gbc.insets = [0, 0, 0, 0]
+                    gbc.ipadx = 50
+                    button = button(
+                        defaultButton: true,
+                        text: 'OK',
+                        actionPerformed: {
+                            password = input.password
+                            dispose()
+                        },
+                        constraints: gbc)
+                }
+            }
+        }
+    } else {
+        password = System.console().readPassword(message)
+    }
+    return new String(password)
 }
