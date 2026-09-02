@@ -81,18 +81,7 @@ jobs:
       - name: Compile
         run: haxelib run lime build ${{ inputs.buildArgs }}
 
-      # ==========================================
-      #  НОВЫЙ ШАГ — удаляет Firebase из Gradle
-      #  Выполняется ПОСЛЕ компиляции, но ДО подписи
-      # ==========================================
-      - name: Remove Firebase from Gradle files
-        if: inputs.exportPath == 'android'
-        run: |
-          echo "🔍 Searching for Firebase in Gradle files..."
-          find export/release/android/bin/ -name "*.gradle" -exec sed -i '/firebaseCrashlytics/d' {} \;
-          find export/release/android/bin/ -name "*.gradle" -exec sed -i '/google-services/d' {} \;
-          find export/release/android/bin/ -name "*.gradle" -exec sed -i '/Firebase/d' {} \;
-          echo "✅ Firebase removed from all Gradle files."
+
 
       - name: Sign APK with the existing keystore
         if: inputs.exportPath == 'android'
