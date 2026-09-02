@@ -205,7 +205,7 @@
 
         <define name="x86_BUILD" if="32bits" />
 
-        <template path="templates/android/app/build.gradle" rename="app/build.gradle" />
+        <haxedef name="NO_FIREBASE_GRADLE_PATCH" />
         <!-- ______________________________ Haxedefines _____________________________ -->
 
         <haxedef name="FLX_NO_FOCUS_LOST_SCREEN" />
