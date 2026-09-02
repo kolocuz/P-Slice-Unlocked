@@ -1,0 +1,37 @@
+name: Generate Gradle files
+
+on:
+  workflow_dispatch:  # Запускается вручную
+
+jobs:
+  generate-gradle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.6
+
+      - name: Restore Libraries
+        uses: actions/cache@v3
+        with:
+          key: P-Slice-Unlocked-desktop-cache
+          path: .haxelib/
+          restore-keys: P-Slice-Unlocked-desktop-cache
+
+      - name: Install dependencies
+        run: sh ./setup/unix.sh
+
+      - name: Generate Gradle project (no compilation)
+        run: |
+          haxelib run lime build android -D nosign || true
+          # Останавливаемся, как только появились файлы
+
+      - name: Upload build.gradle
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-files
+          path: export/release/android/bin/app/build.gradle
