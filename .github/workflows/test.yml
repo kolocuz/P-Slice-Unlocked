@@ -1,12 +1,11 @@
-name: Generate Gradle Template
+name: Generate Gradle Template (fast)
 
 on:
   workflow_dispatch:
 
 jobs:
-  GenerateGradle:
-    name: Generate Gradle Files
-    runs-on: ubuntu-24.04
+  generate-gradle:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@main
@@ -30,25 +29,38 @@ jobs:
         run: haxelib install format
 
       - name: Setup Android SDK
+        id: setup-android
         run: |
           sudo apt-get update
           sudo apt-get install -y openjdk-17-jdk wget unzip
+
           export ANDROID_HOME=$HOME/android-sdk
           export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.3.6528147
+
           mkdir -p $ANDROID_HOME/cmdline-tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-latest.zip -O /tmp/cmdline-tools.zip
           unzip /tmp/cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools/
           mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "ndk;27.3.6528147"
+
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+
+      - name: Verify SDK paths
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
+          ls -la $ANDROID_HOME || echo "SDK not found"
+          ls -la $ANDROID_NDK_HOME || echo "NDK not found"
 
       - name: Configure Lime for Android
         run: |
-          haxelib run lime config ANDROID_SDK $ANDROID_HOME
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
-          haxelib run lime config JAVA_HOME /usr/lib/jvm/java-17-openjdk-amd64
+          haxelib run lime config ANDROID_SDK "$ANDROID_HOME"
+          haxelib run lime config ANDROID_NDK_ROOT "$ANDROID_NDK_HOME"
+          haxelib run lime config JAVA_HOME "$JAVA_HOME"
           haxelib run lime config ANDROID_SETUP true
 
       - name: Generate Gradle project
