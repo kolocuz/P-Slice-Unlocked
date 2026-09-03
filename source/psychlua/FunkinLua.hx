@@ -32,7 +32,6 @@ import psychlua.HScript;
 #end
 import psychlua.DebugLuaText;
 import psychlua.ModchartSprite;
-import psychlua.EasyLua;
 import psychlua.LegacyCompat;
 
 import flixel.input.keyboard.FlxKey;
