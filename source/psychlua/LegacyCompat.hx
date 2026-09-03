@@ -1,8 +1,8 @@
 package psychlua;
 
 #if LUA_ALLOWED
-import flixel.FlxColor;
-import flixel.FlxTween;
+import flixel.util.FlxColor;
+import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import states.PlayState;
 import psychlua.LuaUtils;
