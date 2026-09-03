@@ -1,8 +1,8 @@
 name: Build the game
 
 on:
-  push:
-    branches: [master]
+  # push:
+  #   branches: [master]
   workflow_dispatch:
     inputs:
       platform:
@@ -92,13 +92,13 @@ jobs:
       buildArgs: ${{ format('android{0}', inputs.build_mode == 'release' && ' -final' || '') }}
       exportPath: android
       artifactName: ${{ format('PSlice-Unlocked-v{0}-Android', inputs.version) }}
-      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache-v2  # <-- НОВОЕ ИМЯ
+      cacheLibrariesPath: P-Slice-Unlocked-mobile-cache-v2
       cachePath: ${{ format('PSlice-Unlocked-build-android-v{0}', inputs.version) }}
       artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
 
   CreateRelease:
     name: Create GitHub Release
-    if: ${{ inputs.build_mode == 'release' && always() }}
+    if: ${{ inputs.build_mode == 'release' && success() }}
     needs: [BuildWindows, BuildLinux, BuildAndroid]
     runs-on: ubuntu-latest
     permissions:
