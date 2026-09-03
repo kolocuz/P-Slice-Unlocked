@@ -1,6 +1,6 @@
-#if LUA_ALLOWED
 package psychlua;
 
+#if LUA_ALLOWED
 class EasyLua
 {
     public static function implement(funk:FunkinLua)
