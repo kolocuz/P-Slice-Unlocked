@@ -51,7 +51,6 @@ class EasyLua
         funk.set('FlxTimer', flixel.util.FlxTimer);
         funk.set('FlxTween', flixel.tweens.FlxTween);
         funk.set('FlxEase', flixel.tweens.FlxEase);
-        funk.set('FlxColor', flixel.util.FlxColor);
         funk.set('FlxSound', flixel.sound.FlxSound);
 
         // ---- openfl ----
