@@ -1,17 +1,73 @@
 package psychlua;
 
 #if LUA_ALLOWED
-import flixel.util.FlxColor;
-import flixel.tweens.FlxTween;
+
+import flixel.FlxColor;
+import flixel.FlxTween;
 import flixel.tweens.FlxEase;
 import states.PlayState;
 import psychlua.LuaUtils;
+import backend.MusicBeatState;
+import backend.ClientPrefs;
+import backend.Song;
+import backend.Conductor;
+import backend.Highscore;
+import backend.Mods;
+import backend.CoolUtil;
+import backend.Difficulty;
+import backend.WeekData;
+import objects.Character;
+import objects.Note;
+import objects.Alphabet;
+import objects.StrumNote;
+import objects.HealthIcon;
+import openfl.Lib;
+import openfl.utils.Assets;
 
 class LegacyCompat
 {
     public static function implement(funk:FunkinLua)
     {
         var debug = FunkinLua.getBool('luaDebugMode');
+
+        funk.set('ClientPrefs', backend.ClientPrefs);
+        funk.set('Conductor', backend.Conductor);
+        funk.set('Song', backend.Song);
+        funk.set('Paths', Paths);
+        funk.set('Highscore', backend.Highscore);
+        funk.set('Mods', backend.Mods);
+        funk.set('CoolUtil', backend.CoolUtil);
+        funk.set('Difficulty', backend.Difficulty);
+        funk.set('WeekData', backend.WeekData);
+        funk.set('PlayState', states.PlayState);
+        funk.set('MainMenuState', mikolka.vslice.ui.MainMenuState);
+        funk.set('FreeplayState', mikolka.vslice.freeplay.FreeplayState);
+        funk.set('StoryMenuState', mikolka.vslice.ui.StoryMenuState);
+        funk.set('GameOverSubstate', substates.GameOverSubstate);
+        funk.set('PauseSubState', substates.PauseSubState);
+        funk.set('Character', objects.Character);
+        funk.set('Note', objects.Note);
+        funk.set('Alphabet', objects.Alphabet);
+        funk.set('StrumNote', objects.StrumNote);
+        funk.set('HealthIcon', objects.HealthIcon);
+        funk.set('FlxG', flixel.FlxG);
+        funk.set('FlxSprite', flixel.FlxSprite);
+        funk.set('FlxText', flixel.text.FlxText);
+        funk.set('FlxTimer', flixel.util.FlxTimer);
+        funk.set('FlxTween', flixel.tweens.FlxTween);
+        funk.set('FlxEase', flixel.tweens.FlxEase);
+        funk.set('FlxSound', flixel.sound.FlxSound);
+        funk.set('FunkinLua', psychlua.FunkinLua);
+        funk.set('HScript', psychlua.HScript);
+        funk.set('LuaUtils', psychlua.LuaUtils);
+        funk.set('Lib', openfl.Lib);
+        funk.set('Assets', openfl.utils.Assets);
+        funk.set('Type', Type);
+        funk.set('Reflect', Reflect);
+        funk.set('Math', Math);
+        funk.set('Std', Std);
+        funk.set('Json', haxe.Json);
+        funk.set('StringTools', StringTools);
 
         Lua_helper.add_callback(funk.lua, "getScore", function() {
             if (debug) FunkinLua.luaTrace('getScore() is deprecated! Use getProperty("songScore")', false, true, FlxColor.YELLOW);
@@ -43,6 +99,93 @@ class LegacyCompat
             return oldTween(funk, tag, vars, {zoom: val}, dur, ease);
         });
 
+        Lua_helper.add_callback(funk.lua, "getPropertyFromClass", function(classVar:String, variable:String) {
+            var myClass = Type.resolveClass(classVar);
+            if (myClass == null) myClass = Type.resolveClass('backend.' + classVar);
+            if (myClass == null && debug) FunkinLua.luaTrace('Class "' + classVar + '" not found', false, true, FlxColor.RED);
+            return myClass != null ? Reflect.getProperty(myClass, variable) : null;
+        });
+
+        Lua_helper.add_callback(funk.lua, "setPropertyFromClass", function(classVar:String, variable:String, value:Dynamic) {
+            var myClass = Type.resolveClass(classVar);
+            if (myClass == null) myClass = Type.resolveClass('backend.' + classVar);
+            if (myClass != null) Reflect.setProperty(myClass, variable, value);
+            return value;
+        });
+
+        Lua_helper.add_callback(funk.lua, "getGlobalFromScript", function(luaFile:String, global:String) {
+            var found = findScript(luaFile);
+            if (found != null) {
+                for (luaInstance in PlayState.instance.luaArray) {
+                    if (luaInstance.scriptName == found) {
+                        Lua.getglobal(luaInstance.lua, global);
+                        var result = Convert.fromLua(luaInstance.lua, -1);
+                        Lua.pop(luaInstance.lua, 1);
+                        return result;
+                    }
+                }
+            }
+            return null;
+        });
+
+        Lua_helper.add_callback(funk.lua, "setGlobalFromScript", function(luaFile:String, global:String, value:Dynamic) {
+            var found = findScript(luaFile);
+            if (found != null) {
+                for (luaInstance in PlayState.instance.luaArray) {
+                    if (luaInstance.scriptName == found) {
+                        luaInstance.set(global, value);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+
+        Lua_helper.add_callback(funk.lua, "getObjectOrder", function(obj:String) {
+            var leObj = LuaUtils.getObjectDirectly(obj);
+            if (leObj != null) return LuaUtils.getTargetInstance().members.indexOf(leObj);
+            return -1;
+        });
+
+        Lua_helper.add_callback(funk.lua, "setObjectOrder", function(obj:String, position:Int) {
+            var leObj = LuaUtils.getObjectDirectly(obj);
+            if (leObj != null) {
+                var instance = LuaUtils.getTargetInstance();
+                instance.remove(leObj, true);
+                instance.insert(position, leObj);
+                return true;
+            }
+            return false;
+        });
+
+        #if FLX_PITCH
+        Lua_helper.add_callback(funk.lua, "getSoundPitch", function(tag:String) {
+            if (tag != null && tag.length > 0 && PlayState.instance.modchartSounds.exists(tag)) {
+                return PlayState.instance.modchartSounds.get(tag).pitch;
+            }
+            return 1;
+        });
+
+        Lua_helper.add_callback(funk.lua, "setSoundPitch", function(tag:String, value:Float, doPause:Bool = false) {
+            if (tag != null && tag.length > 0 && PlayState.instance.modchartSounds.exists(tag)) {
+                var snd = PlayState.instance.modchartSounds.get(tag);
+                if (snd != null) {
+                    var wasResumed = snd.playing;
+                    if (doPause) snd.pause();
+                    snd.pitch = value;
+                    if (doPause && wasResumed) snd.play();
+                }
+            }
+        });
+        #end
+
+        #if (MODS_ALLOWED && !flash && sys)
+        Lua_helper.add_callback(funk.lua, "initLuaShader", function(name:String, ?glslVersion:Int = 120) {
+            if (!ClientPrefs.data.shaders) return false;
+            return funk.initLuaShader(name);
+        });
+        #end
+
         if (debug) FunkinLua.luaTrace('LegacyCompat loaded (debug ON)', false, false, FlxColor.GREEN);
     }
 
@@ -66,6 +209,16 @@ class LegacyCompat
         }
 
         FlxTween.tween(target, data, dur, {ease: LuaUtils.getTweenEaseByString(ease)});
+        return null;
+    }
+
+    static function findScript(scriptFile:String, ext:String = '.lua') {
+        if (!scriptFile.endsWith(ext)) scriptFile += ext;
+        var path = Paths.getPath(scriptFile, TEXT);
+        #if MODS_ALLOWED
+        if (FileSystem.exists(path)) return path;
+        if (FileSystem.exists(scriptFile)) return scriptFile;
+        #end
         return null;
     }
 }
