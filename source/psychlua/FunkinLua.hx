@@ -1556,7 +1556,6 @@ class FunkinLua {
 		MobileDeprecatedFunctions.implement(this);
 		#end
 		#if android AndroidFunctions.implement(this); #end
-	    EasyLua.implement(this);
         LegacyCompat.implement(this);
 
 		for (name => func in customFunctions)
