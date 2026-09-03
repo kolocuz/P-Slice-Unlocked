@@ -32,7 +32,8 @@ import psychlua.HScript;
 #end
 import psychlua.DebugLuaText;
 import psychlua.ModchartSprite;
-import psychlua.LegacyCompatibility;
+import psychlua.EasyLua;
+import psychlua.LegacyCompat;
 
 import flixel.input.keyboard.FlxKey;
 import flixel.input.gamepad.FlxGamepadInputID;
@@ -1555,7 +1556,8 @@ class FunkinLua {
 		MobileDeprecatedFunctions.implement(this);
 		#end
 		#if android AndroidFunctions.implement(this); #end
-	    LegacyCompatibility.implement(this);
+	    EasyLua.implement(this);
+        LegacyCompat.implement(this);
 
 		for (name => func in customFunctions)
 		{
