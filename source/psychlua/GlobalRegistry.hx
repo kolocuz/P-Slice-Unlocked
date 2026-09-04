@@ -1,129 +1,6 @@
 package psychlua;
 
 #if LUA_ALLOWED
-import backend.Achievements;
-import backend.BaseStage;
-import backend.CacheSystem;
-import backend.ClientPrefs;
-import backend.Conductor;
-import backend.Controls;
-import backend.CoolUtil;
-import backend.CrashHandler;
-import backend.CustomFadeTransition;
-import backend.Difficulty;
-import backend.Highscore;
-import backend.InputFormatter;
-import backend.Language;
-import backend.Mods;
-import backend.MusicBeatState;
-import backend.MusicBeatSubstate;
-import backend.NoteTypesConfig;
-import backend.Paths;
-import backend.PsychCamera;
-import backend.Rating;
-import backend.Song;
-import backend.StageData;
-import backend.WeekData;
-
-import backend.ui.PsychUIBox;
-import backend.ui.PsychUIButton;
-import backend.ui.PsychUICheckBox;
-import backend.ui.PsychUIDropDownMenu;
-import backend.ui.PsychUIEventHandler;
-import backend.ui.PsychUIInputText;
-import backend.ui.PsychUINumericStepper;
-import backend.ui.PsychUIRadioGroup;
-import backend.ui.PsychUISlider;
-import backend.ui.PsychUITab;
-
-import objects.AchievementPopup;
-import objects.Alphabet;
-import objects.AlphabetMenu;
-import objects.AttachedSprite;
-import objects.AttachedText;
-import objects.Bar;
-import objects.BGSprite;
-import objects.Character;
-import objects.CheckboxThingie;
-import objects.HealthIcon;
-import objects.MenuCharacter;
-import objects.MenuItem;
-import objects.Note;
-import objects.NoteSplash;
-import objects.StrumNote;
-import objects.SustainSplash;
-import objects.TypedAlphabet;
-import objects.VideoSprite;
-
-import states.PlayState;
-import states.InitState;
-import states.LoadingState;
-import states.FreeplayState;
-import states.CreditsState;
-import states.ModsMenuState;
-import states.AchievementsMenuState;
-
-import substates.GameOverSubstate;
-import substates.PauseSubState;
-import substates.ResetScoreSubState;
-
-import options.OptionsState;
-import options.Option;
-import options.BaseOptionsMenu;
-import options.ControlsSubState;
-import options.GameplayChangersSubstate;
-import options.GameplaySettingsSubState;
-import options.GraphicsSettingsSubState;
-import options.LanguageSubState;
-import options.ModSettingsSubState;
-import options.NoteOffsetState;
-import options.NotesColorSubState;
-import options.NotesSubState;
-import options.VisualsSettingsSubState;
-
-import shaders.ColorSwap;
-import shaders.Grayscale;
-import shaders.HSVShader;
-import shaders.WiggleEffect;
-import shaders.AdjustColorShader;
-import shaders.RainShader;
-import shaders.RGBPalette;
-import shaders.GaussianBlurShader;
-
-import cutscenes.CutsceneHandler;
-import debug.FPSCounter;
-
-import flixel.FlxG;
-import flixel.FlxSprite;
-import flixel.FlxCamera;
-import flixel.FlxObject;
-import flixel.FlxBasic;
-import flixel.FlxState;
-import flixel.FlxSubState;
-import flixel.FlxGame;
-import flixel.text.FlxText;
-import flixel.util.FlxTimer;
-import flixel.util.FlxSave;
-import flixel.util.FlxDestroyUtil;
-import flixel.util.FlxStringUtil;
-import flixel.tweens.FlxTween;
-import flixel.tweens.FlxEase;
-import flixel.sound.FlxSound;
-import flixel.math.FlxMath;
-import flixel.math.FlxPoint;
-import flixel.math.FlxRect;
-import flixel.math.FlxAngle;
-import flixel.math.FlxVelocity;
-import flixel.math.FlxRandom;
-import flixel.group.FlxGroup;
-import flixel.group.FlxSpriteGroup;
-import flixel.ui.FlxBar;
-import flixel.animation.FlxAnimationController;
-
-import openfl.Lib;
-import openfl.utils.Assets;
-import openfl.display.Application;
-
 class GlobalRegistry
 {
     public static function implement(funk:FunkinLua)
@@ -136,141 +13,140 @@ class GlobalRegistry
                 Lua.pop(funk.lua, 1);
                 
                 if (type != Lua.LUA_TNIL) {
-                    // Уже существует - пропускаем
-                    return;
+                    return; // Уже существует - пропускаем
                 }
             }
             funk.set(name, value);
         }
 
-        // ===== BACKEND (только те, что не зарегистрированы) =====
-        safeSet('Achievements', Achievements);
-        safeSet('BaseStage', BaseStage);
-        safeSet('CacheSystem', CacheSystem);
-        safeSet('ClientPrefs', ClientPrefs);
-        safeSet('Conductor', Conductor);
-        safeSet('Controls', Controls);
-        safeSet('CoolUtil', CoolUtil);
-        safeSet('CrashHandler', CrashHandler);
-        safeSet('CustomFadeTransition', CustomFadeTransition);
-        safeSet('Difficulty', Difficulty);
-        safeSet('Highscore', Highscore);
-        safeSet('InputFormatter', InputFormatter);
-        safeSet('Language', Language);
-        safeSet('Mods', Mods);
-        safeSet('MusicBeatState', MusicBeatState);
-        safeSet('MusicBeatSubstate', MusicBeatSubstate);
-        safeSet('NoteTypesConfig', NoteTypesConfig);
-        safeSet('Paths', Paths);
-        safeSet('PsychCamera', PsychCamera);
-        safeSet('Rating', Rating);
-        safeSet('Song', Song);
-        safeSet('StageData', StageData);
-        safeSet('WeekData', WeekData);
+        // ===== BACKEND (используем полные имена) =====
+        safeSet('Achievements', backend.Achievements);
+        safeSet('BaseStage', backend.BaseStage);
+        safeSet('CacheSystem', backend.CacheSystem);
+        safeSet('ClientPrefs', backend.ClientPrefs);
+        safeSet('Conductor', backend.Conductor);
+        safeSet('Controls', backend.Controls);
+        safeSet('CoolUtil', backend.CoolUtil);
+        safeSet('CrashHandler', backend.CrashHandler);
+        safeSet('CustomFadeTransition', backend.CustomFadeTransition);
+        safeSet('Difficulty', backend.Difficulty);
+        safeSet('Highscore', backend.Highscore);
+        safeSet('InputFormatter', backend.InputFormatter);
+        safeSet('Language', backend.Language);
+        safeSet('Mods', backend.Mods);
+        safeSet('MusicBeatState', backend.MusicBeatState);
+        safeSet('MusicBeatSubstate', backend.MusicBeatSubstate);
+        safeSet('NoteTypesConfig', backend.NoteTypesConfig);
+        safeSet('Paths', backend.Paths);
+        safeSet('PsychCamera', backend.PsychCamera);
+        safeSet('Rating', backend.Rating);
+        safeSet('Song', backend.Song);
+        safeSet('StageData', backend.StageData);
+        safeSet('WeekData', backend.WeekData);
 
         // ===== BACKEND.UI =====
-        safeSet('PsychUIBox', PsychUIBox);
-        safeSet('PsychUIButton', PsychUIButton);
-        safeSet('PsychUICheckBox', PsychUICheckBox);
-        safeSet('PsychUIDropDownMenu', PsychUIDropDownMenu);
-        safeSet('PsychUIEventHandler', PsychUIEventHandler);
-        safeSet('PsychUIInputText', PsychUIInputText);
-        safeSet('PsychUINumericStepper', PsychUINumericStepper);
-        safeSet('PsychUIRadioGroup', PsychUIRadioGroup);
-        safeSet('PsychUISlider', PsychUISlider);
-        safeSet('PsychUITab', PsychUITab);
+        safeSet('PsychUIBox', backend.ui.PsychUIBox);
+        safeSet('PsychUIButton', backend.ui.PsychUIButton);
+        safeSet('PsychUICheckBox', backend.ui.PsychUICheckBox);
+        safeSet('PsychUIDropDownMenu', backend.ui.PsychUIDropDownMenu);
+        safeSet('PsychUIEventHandler', backend.ui.PsychUIEventHandler);
+        safeSet('PsychUIInputText', backend.ui.PsychUIInputText);
+        safeSet('PsychUINumericStepper', backend.ui.PsychUINumericStepper);
+        safeSet('PsychUIRadioGroup', backend.ui.PsychUIRadioGroup);
+        safeSet('PsychUISlider', backend.ui.PsychUISlider);
+        safeSet('PsychUITab', backend.ui.PsychUITab);
 
         // ===== OBJECTS =====
-        safeSet('AchievementPopup', AchievementPopup);
-        safeSet('Alphabet', Alphabet);
-        safeSet('AlphabetMenu', AlphabetMenu);
-        safeSet('AttachedSprite', AttachedSprite);
-        safeSet('AttachedText', AttachedText);
-        safeSet('Bar', Bar);
-        safeSet('BGSprite', BGSprite);
-        safeSet('Character', Character);
-        safeSet('CheckboxThingie', CheckboxThingie);
-        safeSet('HealthIcon', HealthIcon);
-        safeSet('MenuCharacter', MenuCharacter);
-        safeSet('MenuItem', MenuItem);
-        safeSet('Note', Note);
-        safeSet('NoteSplash', NoteSplash);
-        safeSet('StrumNote', StrumNote);
-        safeSet('SustainSplash', SustainSplash);
-        safeSet('TypedAlphabet', TypedAlphabet);
-        safeSet('VideoSprite', VideoSprite);
+        safeSet('AchievementPopup', objects.AchievementPopup);
+        safeSet('Alphabet', objects.Alphabet);
+        safeSet('AlphabetMenu', objects.AlphabetMenu);
+        safeSet('AttachedSprite', objects.AttachedSprite);
+        safeSet('AttachedText', objects.AttachedText);
+        safeSet('Bar', objects.Bar);
+        safeSet('BGSprite', objects.BGSprite);
+        safeSet('Character', objects.Character);
+        safeSet('CheckboxThingie', objects.CheckboxThingie);
+        safeSet('HealthIcon', objects.HealthIcon);
+        safeSet('MenuCharacter', objects.MenuCharacter);
+        safeSet('MenuItem', objects.MenuItem);
+        safeSet('Note', objects.Note);
+        safeSet('NoteSplash', objects.NoteSplash);
+        safeSet('StrumNote', objects.StrumNote);
+        safeSet('SustainSplash', objects.SustainSplash);
+        safeSet('TypedAlphabet', objects.TypedAlphabet);
+        safeSet('VideoSprite', objects.VideoSprite);
 
         // ===== STATES =====
-        safeSet('PlayState', PlayState);
-        safeSet('InitState', InitState);
-        safeSet('LoadingState', LoadingState);
-        safeSet('FreeplayState', FreeplayState);
-        safeSet('CreditsState', CreditsState);
-        safeSet('ModsMenuState', ModsMenuState);
-        safeSet('AchievementsMenuState', AchievementsMenuState);
+        safeSet('PlayState', states.PlayState);
+        safeSet('InitState', states.InitState);
+        safeSet('LoadingState', states.LoadingState);
+        safeSet('FreeplayState', states.FreeplayState);
+        safeSet('CreditsState', states.CreditsState);
+        safeSet('ModsMenuState', states.ModsMenuState);
+        safeSet('AchievementsMenuState', states.AchievementsMenuState);
 
         // ===== SUBSTATES =====
-        safeSet('GameOverSubstate', GameOverSubstate);
-        safeSet('PauseSubState', PauseSubState);
-        safeSet('ResetScoreSubState', ResetScoreSubState);
+        safeSet('GameOverSubstate', substates.GameOverSubstate);
+        safeSet('PauseSubState', substates.PauseSubState);
+        safeSet('ResetScoreSubState', substates.ResetScoreSubState);
 
         // ===== OPTIONS =====
-        safeSet('OptionsState', OptionsState);
-        safeSet('Option', Option);
-        safeSet('BaseOptionsMenu', BaseOptionsMenu);
-        safeSet('ControlsSubState', ControlsSubState);
-        safeSet('GameplayChangersSubstate', GameplayChangersSubstate);
-        safeSet('GameplaySettingsSubState', GameplaySettingsSubState);
-        safeSet('GraphicsSettingsSubState', GraphicsSettingsSubState);
-        safeSet('LanguageSubState', LanguageSubState);
-        safeSet('ModSettingsSubState', ModSettingsSubState);
-        safeSet('NoteOffsetState', NoteOffsetState);
-        safeSet('NotesColorSubState', NotesColorSubState);
-        safeSet('NotesSubState', NotesSubState);
-        safeSet('VisualsSettingsSubState', VisualsSettingsSubState);
+        safeSet('OptionsState', options.OptionsState);
+        safeSet('Option', options.Option);
+        safeSet('BaseOptionsMenu', options.BaseOptionsMenu);
+        safeSet('ControlsSubState', options.ControlsSubState);
+        safeSet('GameplayChangersSubstate', options.GameplayChangersSubstate);
+        safeSet('GameplaySettingsSubState', options.GameplaySettingsSubState);
+        safeSet('GraphicsSettingsSubState', options.GraphicsSettingsSubState);
+        safeSet('LanguageSubState', options.LanguageSubState);
+        safeSet('ModSettingsSubState', options.ModSettingsSubState);
+        safeSet('NoteOffsetState', options.NoteOffsetState);
+        safeSet('NotesColorSubState', options.NotesColorSubState);
+        safeSet('NotesSubState', options.NotesSubState);
+        safeSet('VisualsSettingsSubState', options.VisualsSettingsSubState);
 
         // ===== SHADERS =====
-        safeSet('ColorSwap', ColorSwap);
-        safeSet('Grayscale', Grayscale);
-        safeSet('HSVShader', HSVShader);
-        safeSet('WiggleEffect', WiggleEffect);
-        safeSet('AdjustColorShader', AdjustColorShader);
-        safeSet('RainShader', RainShader);
-        safeSet('RGBPalette', RGBPalette);
-        safeSet('GaussianBlurShader', GaussianBlurShader);
+        safeSet('ColorSwap', shaders.ColorSwap);
+        safeSet('Grayscale', shaders.Grayscale);
+        safeSet('HSVShader', shaders.HSVShader);
+        safeSet('WiggleEffect', shaders.WiggleEffect);
+        safeSet('AdjustColorShader', shaders.AdjustColorShader);
+        safeSet('RainShader', shaders.RainShader);
+        safeSet('RGBPalette', shaders.RGBPalette);
+        safeSet('GaussianBlurShader', shaders.GaussianBlurShader);
 
         // ===== FLIXEL =====
-        safeSet('FlxG', FlxG);
-        safeSet('FlxSprite', FlxSprite);
-        safeSet('FlxText', FlxText);
-        safeSet('FlxTimer', FlxTimer);
-        safeSet('FlxTween', FlxTween);
-        safeSet('FlxEase', FlxEase);
-        safeSet('FlxSound', FlxSound);
-        safeSet('FlxCamera', FlxCamera);
-        safeSet('FlxMath', FlxMath);
-        safeSet('FlxObject', FlxObject);
-        safeSet('FlxBasic', FlxBasic);
-        safeSet('FlxState', FlxState);
-        safeSet('FlxSubState', FlxSubState);
-        safeSet('FlxGame', FlxGame);
-        safeSet('FlxSave', FlxSave);
-        safeSet('FlxDestroyUtil', FlxDestroyUtil);
-        safeSet('FlxStringUtil', FlxStringUtil);
-        safeSet('FlxPoint', FlxPoint);
-        safeSet('FlxRect', FlxRect);
-        safeSet('FlxAngle', FlxAngle);
-        safeSet('FlxVelocity', FlxVelocity);
-        safeSet('FlxRandom', FlxRandom);
-        safeSet('FlxGroup', FlxGroup);
-        safeSet('FlxSpriteGroup', FlxSpriteGroup);
-        safeSet('FlxBar', FlxBar);
-        safeSet('FlxAnimationController', FlxAnimationController);
+        safeSet('FlxG', flixel.FlxG);
+        safeSet('FlxSprite', flixel.FlxSprite);
+        safeSet('FlxText', flixel.text.FlxText);
+        safeSet('FlxTimer', flixel.util.FlxTimer);
+        safeSet('FlxTween', flixel.tweens.FlxTween);
+        safeSet('FlxEase', flixel.tweens.FlxEase);
+        safeSet('FlxSound', flixel.sound.FlxSound);
+        safeSet('FlxCamera', flixel.FlxCamera);
+        safeSet('FlxMath', flixel.math.FlxMath);
+        safeSet('FlxObject', flixel.FlxObject);
+        safeSet('FlxBasic', flixel.FlxBasic);
+        safeSet('FlxState', flixel.FlxState);
+        safeSet('FlxSubState', flixel.FlxSubState);
+        safeSet('FlxGame', flixel.FlxGame);
+        safeSet('FlxSave', flixel.util.FlxSave);
+        safeSet('FlxDestroyUtil', flixel.util.FlxDestroyUtil);
+        safeSet('FlxStringUtil', flixel.util.FlxStringUtil);
+        safeSet('FlxPoint', flixel.math.FlxPoint);
+        safeSet('FlxRect', flixel.math.FlxRect);
+        safeSet('FlxAngle', flixel.math.FlxAngle);
+        safeSet('FlxVelocity', flixel.math.FlxVelocity);
+        safeSet('FlxRandom', flixel.math.FlxRandom);
+        safeSet('FlxGroup', flixel.group.FlxGroup);
+        safeSet('FlxSpriteGroup', flixel.group.FlxSpriteGroup);
+        safeSet('FlxBar', flixel.ui.FlxBar);
+        safeSet('FlxAnimationController', flixel.animation.FlxAnimationController);
 
         // ===== OPENFL =====
-        safeSet('Lib', Lib);
-        safeSet('Assets', Assets);
-        safeSet('Application', Application);
+        safeSet('Lib', openfl.Lib);
+        safeSet('Assets', openfl.utils.Assets);
+        safeSet('Application', openfl.display.Application);
 
         // ===== HAXE =====
         safeSet('Type', Type);
@@ -284,10 +160,10 @@ class GlobalRegistry
         safeSet('StringBuf', StringBuf);
 
         // ===== CUTSCENES =====
-        safeSet('CutsceneHandler', CutsceneHandler);
+        safeSet('CutsceneHandler', cutscenes.CutsceneHandler);
 
         // ===== DEBUG =====
-        safeSet('FPSCounter', FPSCounter);
+        safeSet('FPSCounter', debug.FPSCounter);
 
         // ===== PSYCHLUA =====
         safeSet('FunkinLua', FunkinLua);
