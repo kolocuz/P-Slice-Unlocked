@@ -11,7 +11,6 @@ import backend.CoolUtil;
 import backend.CrashHandler;
 import backend.CustomFadeTransition;
 import backend.Difficulty;
-import backend.Discord;
 import backend.Highscore;
 import backend.InputFormatter;
 import backend.Language;
@@ -129,161 +128,175 @@ class GlobalRegistry
 {
     public static function implement(funk:FunkinLua)
     {
-        // ===== BACKEND =====
-        funk.set('Achievements', Achievements);
-        funk.set('BaseStage', BaseStage);
-        funk.set('CacheSystem', CacheSystem);
-        funk.set('ClientPrefs', ClientPrefs);
-        funk.set('Conductor', Conductor);
-        funk.set('Controls', Controls);
-        funk.set('CoolUtil', CoolUtil);
-        funk.set('CrashHandler', CrashHandler);
-        funk.set('CustomFadeTransition', CustomFadeTransition);
-        funk.set('Difficulty', Difficulty);
-        funk.set('Discord', Discord);
-        funk.set('Highscore', Highscore);
-        funk.set('InputFormatter', InputFormatter);
-        funk.set('Language', Language);
-        funk.set('Mods', Mods);
-        funk.set('MusicBeatState', MusicBeatState);
-        funk.set('MusicBeatSubstate', MusicBeatSubstate);
-        funk.set('NoteTypesConfig', NoteTypesConfig);
-        funk.set('Paths', Paths);
-        funk.set('PsychCamera', PsychCamera);
-        funk.set('Rating', Rating);
-        funk.set('Song', Song);
-        funk.set('StageData', StageData);
-        funk.set('WeekData', WeekData);
+        // Функция для безопасной регистрации (не перезаписывает существующие)
+        function safeSet(name:String, value:Dynamic) {
+            if (funk.lua != null) {
+                Lua.getglobal(funk.lua, name);
+                var type = Lua.type(funk.lua, -1);
+                Lua.pop(funk.lua, 1);
+                
+                if (type != Lua.LUA_TNIL) {
+                    // Уже существует - пропускаем
+                    return;
+                }
+            }
+            funk.set(name, value);
+        }
+
+        // ===== BACKEND (только те, что не зарегистрированы) =====
+        safeSet('Achievements', Achievements);
+        safeSet('BaseStage', BaseStage);
+        safeSet('CacheSystem', CacheSystem);
+        safeSet('ClientPrefs', ClientPrefs);
+        safeSet('Conductor', Conductor);
+        safeSet('Controls', Controls);
+        safeSet('CoolUtil', CoolUtil);
+        safeSet('CrashHandler', CrashHandler);
+        safeSet('CustomFadeTransition', CustomFadeTransition);
+        safeSet('Difficulty', Difficulty);
+        safeSet('Highscore', Highscore);
+        safeSet('InputFormatter', InputFormatter);
+        safeSet('Language', Language);
+        safeSet('Mods', Mods);
+        safeSet('MusicBeatState', MusicBeatState);
+        safeSet('MusicBeatSubstate', MusicBeatSubstate);
+        safeSet('NoteTypesConfig', NoteTypesConfig);
+        safeSet('Paths', Paths);
+        safeSet('PsychCamera', PsychCamera);
+        safeSet('Rating', Rating);
+        safeSet('Song', Song);
+        safeSet('StageData', StageData);
+        safeSet('WeekData', WeekData);
 
         // ===== BACKEND.UI =====
-        funk.set('PsychUIBox', PsychUIBox);
-        funk.set('PsychUIButton', PsychUIButton);
-        funk.set('PsychUICheckBox', PsychUICheckBox);
-        funk.set('PsychUIDropDownMenu', PsychUIDropDownMenu);
-        funk.set('PsychUIEventHandler', PsychUIEventHandler);
-        funk.set('PsychUIInputText', PsychUIInputText);
-        funk.set('PsychUINumericStepper', PsychUINumericStepper);
-        funk.set('PsychUIRadioGroup', PsychUIRadioGroup);
-        funk.set('PsychUISlider', PsychUISlider);
-        funk.set('PsychUITab', PsychUITab);
+        safeSet('PsychUIBox', PsychUIBox);
+        safeSet('PsychUIButton', PsychUIButton);
+        safeSet('PsychUICheckBox', PsychUICheckBox);
+        safeSet('PsychUIDropDownMenu', PsychUIDropDownMenu);
+        safeSet('PsychUIEventHandler', PsychUIEventHandler);
+        safeSet('PsychUIInputText', PsychUIInputText);
+        safeSet('PsychUINumericStepper', PsychUINumericStepper);
+        safeSet('PsychUIRadioGroup', PsychUIRadioGroup);
+        safeSet('PsychUISlider', PsychUISlider);
+        safeSet('PsychUITab', PsychUITab);
 
         // ===== OBJECTS =====
-        funk.set('AchievementPopup', AchievementPopup);
-        funk.set('Alphabet', Alphabet);
-        funk.set('AlphabetMenu', AlphabetMenu);
-        funk.set('AttachedSprite', AttachedSprite);
-        funk.set('AttachedText', AttachedText);
-        funk.set('Bar', Bar);
-        funk.set('BGSprite', BGSprite);
-        funk.set('Character', Character);
-        funk.set('CheckboxThingie', CheckboxThingie);
-        funk.set('HealthIcon', HealthIcon);
-        funk.set('MenuCharacter', MenuCharacter);
-        funk.set('MenuItem', MenuItem);
-        funk.set('Note', Note);
-        funk.set('NoteSplash', NoteSplash);
-        funk.set('StrumNote', StrumNote);
-        funk.set('SustainSplash', SustainSplash);
-        funk.set('TypedAlphabet', TypedAlphabet);
-        funk.set('VideoSprite', VideoSprite);
+        safeSet('AchievementPopup', AchievementPopup);
+        safeSet('Alphabet', Alphabet);
+        safeSet('AlphabetMenu', AlphabetMenu);
+        safeSet('AttachedSprite', AttachedSprite);
+        safeSet('AttachedText', AttachedText);
+        safeSet('Bar', Bar);
+        safeSet('BGSprite', BGSprite);
+        safeSet('Character', Character);
+        safeSet('CheckboxThingie', CheckboxThingie);
+        safeSet('HealthIcon', HealthIcon);
+        safeSet('MenuCharacter', MenuCharacter);
+        safeSet('MenuItem', MenuItem);
+        safeSet('Note', Note);
+        safeSet('NoteSplash', NoteSplash);
+        safeSet('StrumNote', StrumNote);
+        safeSet('SustainSplash', SustainSplash);
+        safeSet('TypedAlphabet', TypedAlphabet);
+        safeSet('VideoSprite', VideoSprite);
 
         // ===== STATES =====
-        funk.set('PlayState', PlayState);
-        funk.set('InitState', InitState);
-        funk.set('LoadingState', LoadingState);
-        funk.set('FreeplayState', FreeplayState);
-        funk.set('CreditsState', CreditsState);
-        funk.set('ModsMenuState', ModsMenuState);
-        funk.set('AchievementsMenuState', AchievementsMenuState);
+        safeSet('PlayState', PlayState);
+        safeSet('InitState', InitState);
+        safeSet('LoadingState', LoadingState);
+        safeSet('FreeplayState', FreeplayState);
+        safeSet('CreditsState', CreditsState);
+        safeSet('ModsMenuState', ModsMenuState);
+        safeSet('AchievementsMenuState', AchievementsMenuState);
 
         // ===== SUBSTATES =====
-        funk.set('GameOverSubstate', GameOverSubstate);
-        funk.set('PauseSubState', PauseSubState);
-        funk.set('ResetScoreSubState', ResetScoreSubState);
+        safeSet('GameOverSubstate', GameOverSubstate);
+        safeSet('PauseSubState', PauseSubState);
+        safeSet('ResetScoreSubState', ResetScoreSubState);
 
         // ===== OPTIONS =====
-        funk.set('OptionsState', OptionsState);
-        funk.set('Option', Option);
-        funk.set('BaseOptionsMenu', BaseOptionsMenu);
-        funk.set('ControlsSubState', ControlsSubState);
-        funk.set('GameplayChangersSubstate', GameplayChangersSubstate);
-        funk.set('GameplaySettingsSubState', GameplaySettingsSubState);
-        funk.set('GraphicsSettingsSubState', GraphicsSettingsSubState);
-        funk.set('LanguageSubState', LanguageSubState);
-        funk.set('ModSettingsSubState', ModSettingsSubState);
-        funk.set('NoteOffsetState', NoteOffsetState);
-        funk.set('NotesColorSubState', NotesColorSubState);
-        funk.set('NotesSubState', NotesSubState);
-        funk.set('VisualsSettingsSubState', VisualsSettingsSubState);
+        safeSet('OptionsState', OptionsState);
+        safeSet('Option', Option);
+        safeSet('BaseOptionsMenu', BaseOptionsMenu);
+        safeSet('ControlsSubState', ControlsSubState);
+        safeSet('GameplayChangersSubstate', GameplayChangersSubstate);
+        safeSet('GameplaySettingsSubState', GameplaySettingsSubState);
+        safeSet('GraphicsSettingsSubState', GraphicsSettingsSubState);
+        safeSet('LanguageSubState', LanguageSubState);
+        safeSet('ModSettingsSubState', ModSettingsSubState);
+        safeSet('NoteOffsetState', NoteOffsetState);
+        safeSet('NotesColorSubState', NotesColorSubState);
+        safeSet('NotesSubState', NotesSubState);
+        safeSet('VisualsSettingsSubState', VisualsSettingsSubState);
 
         // ===== SHADERS =====
-        funk.set('ColorSwap', ColorSwap);
-        funk.set('Grayscale', Grayscale);
-        funk.set('HSVShader', HSVShader);
-        funk.set('WiggleEffect', WiggleEffect);
-        funk.set('AdjustColorShader', AdjustColorShader);
-        funk.set('RainShader', RainShader);
-        funk.set('RGBPalette', RGBPalette);
-        funk.set('GaussianBlurShader', GaussianBlurShader);
+        safeSet('ColorSwap', ColorSwap);
+        safeSet('Grayscale', Grayscale);
+        safeSet('HSVShader', HSVShader);
+        safeSet('WiggleEffect', WiggleEffect);
+        safeSet('AdjustColorShader', AdjustColorShader);
+        safeSet('RainShader', RainShader);
+        safeSet('RGBPalette', RGBPalette);
+        safeSet('GaussianBlurShader', GaussianBlurShader);
 
         // ===== FLIXEL =====
-        funk.set('FlxG', FlxG);
-        funk.set('FlxSprite', FlxSprite);
-        funk.set('FlxText', FlxText);
-        funk.set('FlxTimer', FlxTimer);
-        funk.set('FlxTween', FlxTween);
-        funk.set('FlxEase', FlxEase);
-        funk.set('FlxSound', FlxSound);
-        funk.set('FlxCamera', FlxCamera);
-        funk.set('FlxMath', FlxMath);
-        funk.set('FlxObject', FlxObject);
-        funk.set('FlxBasic', FlxBasic);
-        funk.set('FlxState', FlxState);
-        funk.set('FlxSubState', FlxSubState);
-        funk.set('FlxGame', FlxGame);
-        funk.set('FlxSave', FlxSave);
-        funk.set('FlxDestroyUtil', FlxDestroyUtil);
-        funk.set('FlxStringUtil', FlxStringUtil);
-        funk.set('FlxPoint', FlxPoint);
-        funk.set('FlxRect', FlxRect);
-        funk.set('FlxAngle', FlxAngle);
-        funk.set('FlxVelocity', FlxVelocity);
-        funk.set('FlxRandom', FlxRandom);
-        funk.set('FlxGroup', FlxGroup);
-        funk.set('FlxSpriteGroup', FlxSpriteGroup);
-        funk.set('FlxBar', FlxBar);
-        funk.set('FlxAnimationController', FlxAnimationController);
+        safeSet('FlxG', FlxG);
+        safeSet('FlxSprite', FlxSprite);
+        safeSet('FlxText', FlxText);
+        safeSet('FlxTimer', FlxTimer);
+        safeSet('FlxTween', FlxTween);
+        safeSet('FlxEase', FlxEase);
+        safeSet('FlxSound', FlxSound);
+        safeSet('FlxCamera', FlxCamera);
+        safeSet('FlxMath', FlxMath);
+        safeSet('FlxObject', FlxObject);
+        safeSet('FlxBasic', FlxBasic);
+        safeSet('FlxState', FlxState);
+        safeSet('FlxSubState', FlxSubState);
+        safeSet('FlxGame', FlxGame);
+        safeSet('FlxSave', FlxSave);
+        safeSet('FlxDestroyUtil', FlxDestroyUtil);
+        safeSet('FlxStringUtil', FlxStringUtil);
+        safeSet('FlxPoint', FlxPoint);
+        safeSet('FlxRect', FlxRect);
+        safeSet('FlxAngle', FlxAngle);
+        safeSet('FlxVelocity', FlxVelocity);
+        safeSet('FlxRandom', FlxRandom);
+        safeSet('FlxGroup', FlxGroup);
+        safeSet('FlxSpriteGroup', FlxSpriteGroup);
+        safeSet('FlxBar', FlxBar);
+        safeSet('FlxAnimationController', FlxAnimationController);
 
         // ===== OPENFL =====
-        funk.set('Lib', Lib);
-        funk.set('Assets', Assets);
-        funk.set('Application', Application);
+        safeSet('Lib', Lib);
+        safeSet('Assets', Assets);
+        safeSet('Application', Application);
 
         // ===== HAXE =====
-        funk.set('Type', Type);
-        funk.set('Reflect', Reflect);
-        funk.set('Math', Math);
-        funk.set('Std', Std);
-        funk.set('Json', haxe.Json);
-        funk.set('StringTools', StringTools);
-        funk.set('EReg', EReg);
-        funk.set('Lambda', Lambda);
-        funk.set('StringBuf', StringBuf);
+        safeSet('Type', Type);
+        safeSet('Reflect', Reflect);
+        safeSet('Math', Math);
+        safeSet('Std', Std);
+        safeSet('Json', haxe.Json);
+        safeSet('StringTools', StringTools);
+        safeSet('EReg', EReg);
+        safeSet('Lambda', Lambda);
+        safeSet('StringBuf', StringBuf);
 
         // ===== CUTSCENES =====
-        funk.set('CutsceneHandler', CutsceneHandler);
+        safeSet('CutsceneHandler', CutsceneHandler);
 
         // ===== DEBUG =====
-        funk.set('FPSCounter', FPSCounter);
+        safeSet('FPSCounter', FPSCounter);
 
         // ===== PSYCHLUA =====
-        funk.set('FunkinLua', FunkinLua);
-        funk.set('HScript', HScript);
-        funk.set('LuaUtils', LuaUtils);
-        funk.set('CustomSubstate', CustomSubstate);
-        funk.set('ModchartSprite', ModchartSprite);
-        funk.set('ModchartAnimateSprite', ModchartAnimateSprite);
-        funk.set('DebugLuaText', DebugLuaText);
+        safeSet('FunkinLua', FunkinLua);
+        safeSet('HScript', HScript);
+        safeSet('LuaUtils', LuaUtils);
+        safeSet('CustomSubstate', CustomSubstate);
+        safeSet('ModchartSprite', ModchartSprite);
+        safeSet('ModchartAnimateSprite', ModchartAnimateSprite);
+        safeSet('DebugLuaText', DebugLuaText);
     }
 }
 #end
