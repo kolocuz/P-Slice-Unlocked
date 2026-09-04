@@ -39,7 +39,6 @@ class LegacyCompat
     {
         var debug = FunkinLua.getBool('luaDebugMode');
 
-        // ---- Алиасы классов ----
         funk.set('ClientPrefs', backend.ClientPrefs);
         funk.set('Conductor', backend.Conductor);
         funk.set('Song', backend.Song);
@@ -79,7 +78,6 @@ class LegacyCompat
         funk.set('Json', haxe.Json);
         funk.set('StringTools', StringTools);
 
-        // ---- Устаревшие функции (warn только 1 раз) ----
         Lua_helper.add_callback(funk.lua, "getScore", function() {
             if (debug) warnOnce(funk, 'getScore', 'getScore() is deprecated! Use getProperty("songScore")');
             return PlayState.instance?.songScore ?? 0;
@@ -113,15 +111,34 @@ class LegacyCompat
         Lua_helper.add_callback(funk.lua, "getPropertyFromClass", function(classVar:String, variable:String) {
             var myClass = Type.resolveClass(classVar);
             if (myClass == null) myClass = Type.resolveClass('backend.' + classVar);
-            if (myClass == null && debug) warnOnce(funk, 'getPropertyFromClass_' + classVar, 'Class "' + classVar + '" not found, using fallback');
-            return myClass != null ? Reflect.getProperty(myClass, variable) : null;
+            
+            if (myClass != null) {
+                if (classVar == 'ClientPrefs' || classVar == 'backend.ClientPrefs') {
+                    return Reflect.field(ClientPrefs.data, variable);
+                }
+                return Reflect.getProperty(myClass, variable);
+            }
+            
+            if (debug) warnOnce(funk, 'getPropertyFromClass_' + classVar, 'Class "' + classVar + '" not found');
+            return null;
         });
 
         Lua_helper.add_callback(funk.lua, "setPropertyFromClass", function(classVar:String, variable:String, value:Dynamic) {
             var myClass = Type.resolveClass(classVar);
             if (myClass == null) myClass = Type.resolveClass('backend.' + classVar);
-            if (myClass != null) Reflect.setProperty(myClass, variable, value);
-            return value;
+            
+            if (myClass != null) {
+                if (classVar == 'ClientPrefs' || classVar == 'backend.ClientPrefs') {
+                    Reflect.setField(ClientPrefs.data, variable, value);
+                    ClientPrefs.saveSettings();
+                } else {
+                    Reflect.setProperty(myClass, variable, value);
+                }
+                return value;
+            }
+            
+            if (debug) warnOnce(funk, 'setPropertyFromClass_' + classVar, 'Class "' + classVar + '" not found');
+            return null;
         });
 
         #if FLX_PITCH
