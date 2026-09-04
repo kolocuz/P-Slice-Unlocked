@@ -33,6 +33,7 @@ import psychlua.HScript;
 import psychlua.DebugLuaText;
 import psychlua.ModchartSprite;
 import psychlua.LegacyCompat;
+import psychlua.globalregistry
 
 import flixel.input.keyboard.FlxKey;
 import flixel.input.gamepad.FlxGamepadInputID;
@@ -42,6 +43,7 @@ import mobile.psychlua.Functions;
 
 import mikolka.vslice.freeplay.FreeplayState;
 import mikolka.stages.EventLoader;
+
 
 
 class FunkinLua {
@@ -1556,6 +1558,7 @@ class FunkinLua {
 		#end
 		#if android AndroidFunctions.implement(this); #end
         LegacyCompat.implement(this);
+		GlobalRegistry.implement(this);
 
 		for (name => func in customFunctions)
 		{
