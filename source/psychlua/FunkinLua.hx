@@ -1539,7 +1539,9 @@ class FunkinLua {
 			trace('Closing script $scriptName');
 			return closed;
 		});
-
+        
+		LegacyCompat.implement(this);
+		GlobalRegistry.implement(this);
 		#if DISCORD_ALLOWED DiscordClient.addLuaCallbacks(lua); #end
 		#if ACHIEVEMENTS_ALLOWED Achievements.addLuaCallbacks(lua); #end
 		#if TRANSLATIONS_ALLOWED Language.addLuaCallbacks(lua); #end
@@ -1557,8 +1559,6 @@ class FunkinLua {
 		MobileDeprecatedFunctions.implement(this);
 		#end
 		#if android AndroidFunctions.implement(this); #end
-        LegacyCompat.implement(this);
-		GlobalRegistry.implement(this);
 
 		for (name => func in customFunctions)
 		{
