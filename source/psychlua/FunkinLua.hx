@@ -33,7 +33,7 @@ import psychlua.HScript;
 import psychlua.DebugLuaText;
 import psychlua.ModchartSprite;
 import psychlua.LegacyCompat;
-import psychlua.globalregistry;
+import psychlua.GlobalRegistry;
 
 import flixel.input.keyboard.FlxKey;
 import flixel.input.gamepad.FlxGamepadInputID;
