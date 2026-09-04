@@ -5,7 +5,7 @@ class GlobalRegistry
 {
     public static function implement(funk:FunkinLua)
     {
-        // Функция для безопасной регистрации (не перезаписывает существующие)
+
         function safeSet(name:String, value:Dynamic) {
             if (funk.lua != null) {
                 Lua.getglobal(funk.lua, name);
@@ -13,13 +13,13 @@ class GlobalRegistry
                 Lua.pop(funk.lua, 1);
                 
                 if (type != Lua.LUA_TNIL) {
-                    return; // Уже существует - пропускаем
+                    return; 
                 }
             }
             funk.set(name, value);
         }
 
-        // ===== BACKEND (используем полные имена) =====
+        // ===== BACKEND  =====
         safeSet('Achievements', backend.Achievements);
         safeSet('BaseStage', backend.BaseStage);
         safeSet('CacheSystem', backend.CacheSystem);
