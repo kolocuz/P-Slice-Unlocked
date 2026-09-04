@@ -33,7 +33,7 @@ import psychlua.HScript;
 import psychlua.DebugLuaText;
 import psychlua.ModchartSprite;
 import psychlua.LegacyCompat;
-import psychlua.GlobalRegistry;
+
 
 import flixel.input.keyboard.FlxKey;
 import flixel.input.gamepad.FlxGamepadInputID;
@@ -1541,7 +1541,6 @@ class FunkinLua {
 		});
         
 		LegacyCompat.implement(this);
-		GlobalRegistry.implement(this);
 		#if DISCORD_ALLOWED DiscordClient.addLuaCallbacks(lua); #end
 		#if ACHIEVEMENTS_ALLOWED Achievements.addLuaCallbacks(lua); #end
 		#if TRANSLATIONS_ALLOWED Language.addLuaCallbacks(lua); #end
