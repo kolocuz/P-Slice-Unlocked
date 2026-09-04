@@ -39,45 +39,6 @@ class LegacyCompat
     {
         var debug = FunkinLua.getBool('luaDebugMode');
 
-        funk.set('ClientPrefs', backend.ClientPrefs);
-        funk.set('Conductor', backend.Conductor);
-        funk.set('Song', backend.Song);
-        funk.set('Paths', Paths);
-        funk.set('Highscore', backend.Highscore);
-        funk.set('Mods', backend.Mods);
-        funk.set('CoolUtil', backend.CoolUtil);
-        funk.set('Difficulty', backend.Difficulty);
-        funk.set('WeekData', backend.WeekData);
-        funk.set('PlayState', states.PlayState);
-        funk.set('MainMenuState', mikolka.vslice.ui.MainMenuState);
-        funk.set('FreeplayState', mikolka.vslice.freeplay.FreeplayState);
-        funk.set('StoryMenuState', mikolka.vslice.ui.StoryMenuState);
-        funk.set('GameOverSubstate', substates.GameOverSubstate);
-        funk.set('PauseSubState', substates.PauseSubState);
-        funk.set('Character', objects.Character);
-        funk.set('Note', objects.Note);
-        funk.set('Alphabet', objects.Alphabet);
-        funk.set('StrumNote', objects.StrumNote);
-        funk.set('HealthIcon', objects.HealthIcon);
-        funk.set('FlxG', flixel.FlxG);
-        funk.set('FlxSprite', flixel.FlxSprite);
-        funk.set('FlxText', flixel.text.FlxText);
-        funk.set('FlxTimer', flixel.util.FlxTimer);
-        funk.set('FlxTween', flixel.tweens.FlxTween);
-        funk.set('FlxEase', flixel.tweens.FlxEase);
-        funk.set('FlxSound', flixel.sound.FlxSound);
-        funk.set('FunkinLua', psychlua.FunkinLua);
-        funk.set('HScript', psychlua.HScript);
-        funk.set('LuaUtils', psychlua.LuaUtils);
-        funk.set('Lib', openfl.Lib);
-        funk.set('Assets', openfl.utils.Assets);
-        funk.set('Type', Type);
-        funk.set('Reflect', Reflect);
-        funk.set('Math', Math);
-        funk.set('Std', Std);
-        funk.set('Json', haxe.Json);
-        funk.set('StringTools', StringTools);
-
         Lua_helper.add_callback(funk.lua, "getScore", function() {
             if (debug) warnOnce(funk, 'getScore', 'getScore() is deprecated! Use getProperty("songScore")');
             return PlayState.instance?.songScore ?? 0;
