@@ -1,21 +1,126 @@
 package psychlua;
 
 #if LUA_ALLOWED
-import backend.*;
-import backend.animation.PsychAnimationController;
-import backend.ui.*;
-import objects.*;
-import states.*;
-import substates.*;
-import options.*;
-import shaders.*;
+import backend.Achievements;
+import backend.BaseStage;
+import backend.CacheSystem;
+import backend.ClientPrefs;
+import backend.Conductor;
+import backend.Controls;
+import backend.CoolUtil;
+import backend.CrashHandler;
+import backend.CustomFadeTransition;
+import backend.Difficulty;
+import backend.Discord;
+import backend.Highscore;
+import backend.InputFormatter;
+import backend.Language;
+import backend.Mods;
+import backend.MusicBeatState;
+import backend.MusicBeatSubstate;
+import backend.NoteTypesConfig;
+import backend.Paths;
+import backend.PsychCamera;
+import backend.Rating;
+import backend.Song;
+import backend.StageData;
+import backend.WeekData;
+
+import backend.ui.PsychUIBox;
+import backend.ui.PsychUIButton;
+import backend.ui.PsychUICheckBox;
+import backend.ui.PsychUIDropDownMenu;
+import backend.ui.PsychUIEventHandler;
+import backend.ui.PsychUIInputText;
+import backend.ui.PsychUINumericStepper;
+import backend.ui.PsychUIRadioGroup;
+import backend.ui.PsychUISlider;
+import backend.ui.PsychUITab;
+
+import objects.AchievementPopup;
+import objects.Alphabet;
+import objects.AlphabetMenu;
+import objects.AttachedSprite;
+import objects.AttachedText;
+import objects.Bar;
+import objects.BGSprite;
+import objects.Character;
+import objects.CheckboxThingie;
+import objects.HealthIcon;
+import objects.MenuCharacter;
+import objects.MenuItem;
+import objects.Note;
+import objects.NoteSplash;
+import objects.StrumNote;
+import objects.SustainSplash;
+import objects.TypedAlphabet;
+import objects.VideoSprite;
+
+import states.PlayState;
+import states.InitState;
+import states.LoadingState;
+import states.FreeplayState;
+import states.CreditsState;
+import states.ModsMenuState;
+import states.AchievementsMenuState;
+
+import substates.GameOverSubstate;
+import substates.PauseSubState;
+import substates.ResetScoreSubState;
+
+import options.OptionsState;
+import options.Option;
+import options.BaseOptionsMenu;
+import options.ControlsSubState;
+import options.GameplayChangersSubstate;
+import options.GameplaySettingsSubState;
+import options.GraphicsSettingsSubState;
+import options.LanguageSubState;
+import options.ModSettingsSubState;
+import options.NoteOffsetState;
+import options.NotesColorSubState;
+import options.NotesSubState;
+import options.VisualsSettingsSubState;
+
+import shaders.ColorSwap;
+import shaders.Grayscale;
+import shaders.HSVShader;
+import shaders.WiggleEffect;
+import shaders.AdjustColorShader;
+import shaders.RainShader;
+import shaders.RGBPalette;
+import shaders.GaussianBlurShader;
+
 import cutscenes.CutsceneHandler;
 import debug.FPSCounter;
-import flixel.*;
+
+import flixel.FlxG;
+import flixel.FlxSprite;
+import flixel.FlxCamera;
+import flixel.FlxObject;
+import flixel.FlxBasic;
+import flixel.FlxState;
+import flixel.FlxSubState;
+import flixel.FlxGame;
 import flixel.text.FlxText;
 import flixel.util.FlxTimer;
+import flixel.util.FlxSave;
+import flixel.util.FlxDestroyUtil;
+import flixel.util.FlxStringUtil;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
+import flixel.sound.FlxSound;
+import flixel.math.FlxMath;
+import flixel.math.FlxPoint;
+import flixel.math.FlxRect;
+import flixel.math.FlxAngle;
+import flixel.math.FlxVelocity;
+import flixel.math.FlxRandom;
+import flixel.group.FlxGroup;
+import flixel.group.FlxSpriteGroup;
+import flixel.ui.FlxBar;
+import flixel.animation.FlxAnimationController;
+
 import openfl.Lib;
 import openfl.utils.Assets;
 import openfl.display.Application;
@@ -25,7 +130,6 @@ class GlobalRegistry
     public static function implement(funk:FunkinLua)
     {
         // ===== BACKEND =====
-        funk.set('backend', backend);
         funk.set('Achievements', Achievements);
         funk.set('BaseStage', BaseStage);
         funk.set('CacheSystem', CacheSystem);
@@ -52,120 +156,110 @@ class GlobalRegistry
         funk.set('WeekData', WeekData);
 
         // ===== BACKEND.UI =====
-        funk.set('ui', backend.ui);
-        funk.set('PsychUIBox', backend.ui.PsychUIBox);
-        funk.set('PsychUIButton', backend.ui.PsychUIButton);
-        funk.set('PsychUICheckBox', backend.ui.PsychUICheckBox);
-        funk.set('PsychUIDropDownMenu', backend.ui.PsychUIDropDownMenu);
-        funk.set('PsychUIEventHandler', backend.ui.PsychUIEventHandler);
-        funk.set('PsychUIInputText', backend.ui.PsychUIInputText);
-        funk.set('PsychUINumericStepper', backend.ui.PsychUINumericStepper);
-        funk.set('PsychUIRadioGroup', backend.ui.PsychUIRadioGroup);
-        funk.set('PsychUISlider', backend.ui.PsychUISlider);
-        funk.set('PsychUITab', backend.ui.PsychUITab);
+        funk.set('PsychUIBox', PsychUIBox);
+        funk.set('PsychUIButton', PsychUIButton);
+        funk.set('PsychUICheckBox', PsychUICheckBox);
+        funk.set('PsychUIDropDownMenu', PsychUIDropDownMenu);
+        funk.set('PsychUIEventHandler', PsychUIEventHandler);
+        funk.set('PsychUIInputText', PsychUIInputText);
+        funk.set('PsychUINumericStepper', PsychUINumericStepper);
+        funk.set('PsychUIRadioGroup', PsychUIRadioGroup);
+        funk.set('PsychUISlider', PsychUISlider);
+        funk.set('PsychUITab', PsychUITab);
 
         // ===== OBJECTS =====
-        funk.set('objects', objects);
-        funk.set('AchievementPopup', objects.AchievementPopup);
-        funk.set('Alphabet', objects.Alphabet);
-        funk.set('AlphabetMenu', objects.AlphabetMenu);
-        funk.set('AttachedSprite', objects.AttachedSprite);
-        funk.set('AttachedText', objects.AttachedText);
-        funk.set('Bar', objects.Bar);
-        funk.set('BGSprite', objects.BGSprite);
-        funk.set('Character', objects.Character);
-        funk.set('CheckboxThingie', objects.CheckboxThingie);
-        funk.set('HealthIcon', objects.HealthIcon);
-        funk.set('MenuCharacter', objects.MenuCharacter);
-        funk.set('MenuItem', objects.MenuItem);
-        funk.set('Note', objects.Note);
-        funk.set('NoteSplash', objects.NoteSplash);
-        funk.set('StrumNote', objects.StrumNote);
-        funk.set('SustainSplash', objects.SustainSplash);
-        funk.set('TypedAlphabet', objects.TypedAlphabet);
-        funk.set('VideoSprite', objects.VideoSprite);
+        funk.set('AchievementPopup', AchievementPopup);
+        funk.set('Alphabet', Alphabet);
+        funk.set('AlphabetMenu', AlphabetMenu);
+        funk.set('AttachedSprite', AttachedSprite);
+        funk.set('AttachedText', AttachedText);
+        funk.set('Bar', Bar);
+        funk.set('BGSprite', BGSprite);
+        funk.set('Character', Character);
+        funk.set('CheckboxThingie', CheckboxThingie);
+        funk.set('HealthIcon', HealthIcon);
+        funk.set('MenuCharacter', MenuCharacter);
+        funk.set('MenuItem', MenuItem);
+        funk.set('Note', Note);
+        funk.set('NoteSplash', NoteSplash);
+        funk.set('StrumNote', StrumNote);
+        funk.set('SustainSplash', SustainSplash);
+        funk.set('TypedAlphabet', TypedAlphabet);
+        funk.set('VideoSprite', VideoSprite);
 
         // ===== STATES =====
-        funk.set('states', states);
-        funk.set('PlayState', states.PlayState);
-        funk.set('InitState', states.InitState);
-        funk.set('LoadingState', states.LoadingState);
-        funk.set('FreeplayState', states.FreeplayState);
-        funk.set('CreditsState', states.CreditsState);
-        funk.set('ModsMenuState', states.ModsMenuState);
-        funk.set('AchievementsMenuState', states.AchievementsMenuState);
+        funk.set('PlayState', PlayState);
+        funk.set('InitState', InitState);
+        funk.set('LoadingState', LoadingState);
+        funk.set('FreeplayState', FreeplayState);
+        funk.set('CreditsState', CreditsState);
+        funk.set('ModsMenuState', ModsMenuState);
+        funk.set('AchievementsMenuState', AchievementsMenuState);
 
         // ===== SUBSTATES =====
-        funk.set('substates', substates);
-        funk.set('GameOverSubstate', substates.GameOverSubstate);
-        funk.set('PauseSubState', substates.PauseSubState);
-        funk.set('ResetScoreSubState', substates.ResetScoreSubState);
+        funk.set('GameOverSubstate', GameOverSubstate);
+        funk.set('PauseSubState', PauseSubState);
+        funk.set('ResetScoreSubState', ResetScoreSubState);
 
         // ===== OPTIONS =====
-        funk.set('options', options);
-        funk.set('OptionsState', options.OptionsState);
-        funk.set('Option', options.Option);
-        funk.set('BaseOptionsMenu', options.BaseOptionsMenu);
-        funk.set('ControlsSubState', options.ControlsSubState);
-        funk.set('GameplayChangersSubstate', options.GameplayChangersSubstate);
-        funk.set('GameplaySettingsSubState', options.GameplaySettingsSubState);
-        funk.set('GraphicsSettingsSubState', options.GraphicsSettingsSubState);
-        funk.set('LanguageSubState', options.LanguageSubState);
-        funk.set('ModSettingsSubState', options.ModSettingsSubState);
-        funk.set('NoteOffsetState', options.NoteOffsetState);
-        funk.set('NotesColorSubState', options.NotesColorSubState);
-        funk.set('NotesSubState', options.NotesSubState);
-        funk.set('VisualsSettingsSubState', options.VisualsSettingsSubState);
+        funk.set('OptionsState', OptionsState);
+        funk.set('Option', Option);
+        funk.set('BaseOptionsMenu', BaseOptionsMenu);
+        funk.set('ControlsSubState', ControlsSubState);
+        funk.set('GameplayChangersSubstate', GameplayChangersSubstate);
+        funk.set('GameplaySettingsSubState', GameplaySettingsSubState);
+        funk.set('GraphicsSettingsSubState', GraphicsSettingsSubState);
+        funk.set('LanguageSubState', LanguageSubState);
+        funk.set('ModSettingsSubState', ModSettingsSubState);
+        funk.set('NoteOffsetState', NoteOffsetState);
+        funk.set('NotesColorSubState', NotesColorSubState);
+        funk.set('NotesSubState', NotesSubState);
+        funk.set('VisualsSettingsSubState', VisualsSettingsSubState);
 
         // ===== SHADERS =====
-        funk.set('shaders', shaders);
-        funk.set('ColorSwap', shaders.ColorSwap);
-        funk.set('Grayscale', shaders.Grayscale);
-        funk.set('HSVShader', shaders.HSVShader);
-        funk.set('WiggleEffect', shaders.WiggleEffect);
-        funk.set('WiggleEffectRuntime', shaders.WiggleEffectRuntime);
-        funk.set('AdjustColorShader', shaders.AdjustColorShader);
-        funk.set('RainShader', shaders.RainShader);
-        funk.set('RGBPalette', shaders.RGBPalette);
-        funk.set('GaussianBlurShader', shaders.GaussianBlurShader);
+        funk.set('ColorSwap', ColorSwap);
+        funk.set('Grayscale', Grayscale);
+        funk.set('HSVShader', HSVShader);
+        funk.set('WiggleEffect', WiggleEffect);
+        funk.set('AdjustColorShader', AdjustColorShader);
+        funk.set('RainShader', RainShader);
+        funk.set('RGBPalette', RGBPalette);
+        funk.set('GaussianBlurShader', GaussianBlurShader);
 
         // ===== FLIXEL =====
-        funk.set('flixel', flixel);
-        funk.set('FlxG', flixel.FlxG);
-        funk.set('FlxSprite', flixel.FlxSprite);
-        funk.set('FlxText', flixel.text.FlxText);
-        funk.set('FlxTimer', flixel.util.FlxTimer);
-        funk.set('FlxTween', flixel.tweens.FlxTween);
-        funk.set('FlxEase', flixel.tweens.FlxEase);
-        funk.set('FlxSound', flixel.sound.FlxSound);
-        funk.set('FlxCamera', flixel.FlxCamera);
-        funk.set('FlxMath', flixel.math.FlxMath);
-        funk.set('FlxObject', flixel.FlxObject);
-        funk.set('FlxBasic', flixel.FlxBasic);
-        funk.set('FlxState', flixel.FlxState);
-        funk.set('FlxSubState', flixel.FlxSubState);
-        funk.set('FlxGame', flixel.FlxGame);
-        funk.set('FlxSave', flixel.util.FlxSave);
-        funk.set('FlxDestroyUtil', flixel.util.FlxDestroyUtil);
-        funk.set('FlxStringUtil', flixel.util.FlxStringUtil);
-        funk.set('FlxPoint', flixel.math.FlxPoint);
-        funk.set('FlxRect', flixel.math.FlxRect);
-        funk.set('FlxAngle', flixel.math.FlxAngle);
-        funk.set('FlxVelocity', flixel.math.FlxVelocity);
-        funk.set('FlxRandom', flixel.math.FlxRandom);
-        funk.set('FlxGroup', flixel.group.FlxGroup);
-        funk.set('FlxSpriteGroup', flixel.group.FlxSpriteGroup);
-        funk.set('FlxBar', flixel.ui.FlxBar);
-        funk.set('FlxAnimationController', flixel.animation.FlxAnimationController);
+        funk.set('FlxG', FlxG);
+        funk.set('FlxSprite', FlxSprite);
+        funk.set('FlxText', FlxText);
+        funk.set('FlxTimer', FlxTimer);
+        funk.set('FlxTween', FlxTween);
+        funk.set('FlxEase', FlxEase);
+        funk.set('FlxSound', FlxSound);
+        funk.set('FlxCamera', FlxCamera);
+        funk.set('FlxMath', FlxMath);
+        funk.set('FlxObject', FlxObject);
+        funk.set('FlxBasic', FlxBasic);
+        funk.set('FlxState', FlxState);
+        funk.set('FlxSubState', FlxSubState);
+        funk.set('FlxGame', FlxGame);
+        funk.set('FlxSave', FlxSave);
+        funk.set('FlxDestroyUtil', FlxDestroyUtil);
+        funk.set('FlxStringUtil', FlxStringUtil);
+        funk.set('FlxPoint', FlxPoint);
+        funk.set('FlxRect', FlxRect);
+        funk.set('FlxAngle', FlxAngle);
+        funk.set('FlxVelocity', FlxVelocity);
+        funk.set('FlxRandom', FlxRandom);
+        funk.set('FlxGroup', FlxGroup);
+        funk.set('FlxSpriteGroup', FlxSpriteGroup);
+        funk.set('FlxBar', FlxBar);
+        funk.set('FlxAnimationController', FlxAnimationController);
 
         // ===== OPENFL =====
-        funk.set('openfl', openfl);
-        funk.set('Lib', openfl.Lib);
-        funk.set('Assets', openfl.utils.Assets);
-        funk.set('Application', openfl.display.Application);
+        funk.set('Lib', Lib);
+        funk.set('Assets', Assets);
+        funk.set('Application', Application);
 
         // ===== HAXE =====
-        funk.set('haxe', haxe);
         funk.set('Type', Type);
         funk.set('Reflect', Reflect);
         funk.set('Math', Math);
@@ -177,15 +271,12 @@ class GlobalRegistry
         funk.set('StringBuf', StringBuf);
 
         // ===== CUTSCENES =====
-        funk.set('cutscenes', cutscenes);
-        funk.set('CutsceneHandler', cutscenes.CutsceneHandler);
+        funk.set('CutsceneHandler', CutsceneHandler);
 
         // ===== DEBUG =====
-        funk.set('debug', debug);
-        funk.set('FPSCounter', debug.FPSCounter);
+        funk.set('FPSCounter', FPSCounter);
 
         // ===== PSYCHLUA =====
-        funk.set('psychlua', psychlua);
         funk.set('FunkinLua', FunkinLua);
         funk.set('HScript', HScript);
         funk.set('LuaUtils', LuaUtils);
